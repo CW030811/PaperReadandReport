@@ -61,6 +61,7 @@ Every paper extraction must cover these eight fields:
 - Keep one slide = one heading in `slides_outline.md`.
 - Keep comparison output in a single markdown table unless the user asks for more.
 - Prefer minimal rewrites when refining existing outputs.
+- In markdown files, write math in Preview-renderable LaTeX form: use `$...$` for inline math and `$$...$$` for display math instead of plain Unicode formula text.
 - `07_guided_reading_cn/` is an optional teaching track for interactive Chinese guided reading. It must not replace or weaken the required standard outputs.
 
 ## Quality Gates

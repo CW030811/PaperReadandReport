@@ -15,23 +15,23 @@
 ### Passage 1
 A mixed-integer linear program is an optimization problem of the form
 
-arg min
-x
-{
-c⊤x|Ax≤b, l≤x≤u, x∈Zp×Rn−p}
-, (1)
+$$
+\arg\min_x \left\{ c^\top x \mid Ax \le b,\ l \le x \le u,\ x \in \mathbb{Z}^p \times \mathbb{R}^{n-p} \right\}, \tag{1}
+$$
 
-where c∈Rn is called the objective coefficient vector, A∈Rm×n the constraint coefficient matrix, b∈Rm the constraint right-hand-side vector, l, u∈Rn respectively the lower and upper variable bound vectors, and p≤n the number of integer variables. Under this representation, the size of a MILP is typically measured by the number of rows (m) and columns (n) of the constraint matrix.
+where $c \in \mathbb{R}^n$ is called the objective coefficient vector, $A \in \mathbb{R}^{m \times n}$ the constraint coefficient matrix, $b \in \mathbb{R}^m$ the constraint right-hand-side vector, $l, u \in \mathbb{R}^n$ respectively the lower and upper variable bound vectors, and $p \le n$ the number of integer variables. Under this representation, the size of a MILP is typically measured by the number of rows ($m$) and columns ($n$) of the constraint matrix.
 
 ### Passage 2
 By relaxing the integrality constraint, one obtains a continuous linear program (LP) whose solution provides a lower bound to (1), and can be solved efficiently using, for example, the simplex algorithm. If a solution to the LP relaxation respects the original integrality constraint, then it is also a solution to (1).
 
 ### Passage 3
-If not, then one may decompose the LP relaxation into two sub-problems, by splitting the feasible region according to a variable that does not respect integrality in the current LP solution x⋆,
+If not, then one may decompose the LP relaxation into two sub-problems, by splitting the feasible region according to a variable that does not respect integrality in the current LP solution $x^\star$,
 
-xi≤⌊x⋆i⌋ ∨ xi≥⌈x⋆i⌉, ∃i≤p | x⋆i ∉ Z, (2)
+$$
+x_i \le \lfloor x_i^\star \rfloor \;\lor\; x_i \ge \lceil x_i^\star \rceil,\quad \exists i \le p \mid x_i^\star \notin \mathbb{Z}, \tag{2}
+$$
 
-where ⌊.⌋ and ⌈.⌉ respectively denote the floor and ceil functions. In practice, the two sub-problems will only differ from the parent LP in the variable bounds for xi, which get updated to ui = ⌊x⋆i⌋ in the left child and li = ⌈x⋆i⌉ in the right child.
+where $\lfloor \cdot \rfloor$ and $\lceil \cdot \rceil$ respectively denote the floor and ceil functions. In practice, the two sub-problems will only differ from the parent LP in the variable bounds for $x_i$, which get updated to $u_i = \lfloor x_i^\star \rfloor$ in the left child and $l_i = \lceil x_i^\star \rceil$ in the right child.
 
 ### Passage 4
 The branch-and-bound algorithm, in its simplest formulation, repeatedly performs this binary decomposition, giving rise to a search tree. By design, the best LP solution in the leaf nodes of the tree provides a lower bound to the original MILP, whereas the best integral LP solution (if any) provides an upper bound. The solving process stops whenever both the upper and lower bounds are equal or when the feasible regions do not decompose anymore, thereby providing a certificate of optimality or infeasibility, respectively.
@@ -42,7 +42,7 @@ The branch-and-bound algorithm, in its simplest formulation, repeatedly performs
 - objective coefficient vector `c`:
   目标函数里的系数，决定每个变量对目标值的贡献。
 - constraint matrix `A` / right-hand side `b`:
-  线性约束 `Ax≤b` 的主体。`A` 决定系数结构，`b` 决定约束右端。
+  线性约束 $Ax \le b$ 的主体。`A` 决定系数结构，`b` 决定约束右端。
 - lower bound / upper bound:
   对最优目标值的下界和上界。对最小化问题，lower bound 越高越接近最优值，upper bound 来自当前已找到的可行整数解。
 - integrality constraint:
@@ -58,7 +58,7 @@ The branch-and-bound algorithm, in its simplest formulation, repeatedly performs
 
 ## 5. 本章核心内容
 ### 5.1 用中文讲清楚
-这一章在做一件很基础但很关键的事：把“论文到底在解什么对象”写严谨。公式 (1) 告诉你，这篇论文的基本对象是 MILP，也就是在线性约束 `Ax≤b` 和变量上下界 `l≤x≤u` 之下，最小化 `c⊤x`，同时要求前 `p` 个变量必须取整数。
+这一章在做一件很基础但很关键的事：把“论文到底在解什么对象”写严谨。公式 (1) 告诉你，这篇论文的基本对象是 MILP，也就是在线性约束 $Ax \le b$ 和变量上下界 $l \le x \le u$ 之下，最小化 $c^\top x$，同时要求前 $p$ 个变量必须取整数。
 
 你可以先把它理解成两层结构。第一层是普通线性规划的壳子：目标函数和约束都是线性的。第二层是困难真正来自哪里：有些变量不能取连续实数，只能取整数。正是这层 integrality constraint 让问题通常变难，也让后面的 branch-and-bound 变得有必要。
 
@@ -67,11 +67,11 @@ The branch-and-bound algorithm, in its simplest formulation, repeatedly performs
 这里有一个非常重要的分叉：
 
 - 如果 LP relaxation 的最优解碰巧已经满足整数约束，那么它不仅是 LP 的最优解，也是原 MILP 的一个可行解，而且由于 LP 已经给出了 lower bound，这时这个解实际上就已经把原问题解掉了。
-- 如果 LP relaxation 的解里有某个该为整数的变量却取了小数值，比如 `x_i = 2.7`，那就不能直接接受。此时 B&B 的基本动作就是选这个变量，把原问题拆成两个子问题：一个要求 `x_i ≤ 2`，另一个要求 `x_i ≥ 3`。
+- 如果 LP relaxation 的解里有某个该为整数的变量却取了小数值，比如 $x_i = 2.7$，那就不能直接接受。此时 B&B 的基本动作就是选这个变量，把原问题拆成两个子问题：一个要求 $x_i \le 2$，另一个要求 $x_i \ge 3$。
 
 这就是公式 (2) 的意思。它不是在做复杂的新建模，而是在当前 LP 节点上沿着某个 fractional variable 加两条互斥的 bound 约束，把原来包含 `2.7` 的连续可行域切成左右两块。之后分别求这两个 child problem，就形成了搜索树。
 
-作者还特别强调了一个 solver 视角的重要点：在实践里，这两个子问题通常并不需要重写整套模型，它们相对父节点只是在这个变量的 bound 上更紧了。左子节点把上界改成 `⌊x_i*⌋`，右子节点把下界改成 `⌈x_i*⌉`。这也是为什么后面 solver 可以高效地在树上持续推进。
+作者还特别强调了一个 solver 视角的重要点：在实践里，这两个子问题通常并不需要重写整套模型，它们相对父节点只是在这个变量的 bound 上更紧了。左子节点把上界改成 $\lfloor x_i^\star \rfloor$，右子节点把下界改成 $\lceil x_i^\star \rceil$。这也是为什么后面 solver 可以高效地在树上持续推进。
 
 ### 5.2 这段在全文中的作用
 Section 3.1 的功能是给后面所有“branching policy”讨论打地基。
@@ -103,7 +103,7 @@ Section 3.1 的功能是给后面所有“branching policy”讨论打地基。
 
 ## 8. 你的问答区
 - 你可以直接问：“为什么 relaxed LP 一定是 lower bound？”
-- 你也可以贴一个具体例子，让我带你手算一次 `x_i = 2.7` 时左右子问题是怎么来的。
+- 你也可以贴一个具体例子，让我带你手算一次 $x_i = 2.7$ 时左右子问题是怎么来的。
 - 如果你已经吃透这一章，直接写“这章吃透了”或“进入下一章”。
 
 ## 9. Codex 补充讲解
