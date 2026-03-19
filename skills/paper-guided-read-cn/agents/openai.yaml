@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper Guided Read CN"
+  short_description: "Interactive Chinese chapter-by-chapter paper reading"
+  default_prompt: "Use $paper-guided-read-cn to create or continue the Chinese guided-reading track for the current paper."

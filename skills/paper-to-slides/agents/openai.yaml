@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper To Slides"
+  short_description: "Presentation outline from paper notes"
+  default_prompt: "Use $paper-to-slides to generate the standard slide outline for the current paper."

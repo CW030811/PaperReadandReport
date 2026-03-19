@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper Scan"
+  short_description: "First-pass paper extraction workflow"
+  default_prompt: "Use $paper-scan to extract the current paper into the standard repository outputs."

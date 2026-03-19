@@ -1,0 +1,96 @@
+{
+  "paper_title": "Exact Combinatorial Optimization with Graph Convolutional Neural Networks",
+  "paper_folder": "papers/2026-03-19_exact-combinatorial-optimization-with-graph-convolutional-neural-networks",
+  "scan_date": "2026-03-19",
+  "research_question": {
+    "summary": "Learn a GCNN branching policy for MILP branch-and-bound variable selection that approximates strong branching while generalizing to larger instances.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction",
+      "Section 4 Methodology"
+    ],
+    "status": "done"
+  },
+  "high_level_algorithmic_idea": {
+    "summary": "Encode each B&B state as a variable-constraint bipartite graph and imitate strong branching decisions with a GCNN policy trained by behavioral cloning.",
+    "evidence": [
+      "Abstract",
+      "Section 1",
+      "Section 4.1",
+      "Section 4.2",
+      "Figure 2"
+    ],
+    "status": "done"
+  },
+  "training_label_dataset": {
+    "summary": "Training labels are strong branching expert actions. Datasets are collected from randomly generated MILP instances across four benchmark families, yielding 100,000 training samples and 20,000 validation samples per benchmark with matching test collection details.",
+    "evidence": [
+      "Section 4.1",
+      "Section 5.1 Training",
+      "Supplementary Section 1 Dataset collection details"
+    ],
+    "status": "done"
+  },
+  "network_structure": {
+    "summary": "A bipartite GCNN with one graph convolution split into variable-to-constraint and constraint-to-variable half-convolutions, followed by a final 2-layer perceptron over variable nodes; the main model uses sum aggregation plus prenorm layers.",
+    "evidence": [
+      "Section 4.2",
+      "Section 4.3",
+      "Figure 2",
+      "Section 5.3"
+    ],
+    "status": "done"
+  },
+  "network_output": {
+    "summary": "A masked softmax distribution over candidate branching variables at the current B&B node.",
+    "evidence": [
+      "Section 4.3",
+      "Figure 2"
+    ],
+    "status": "done"
+  },
+  "loss_function": {
+    "summary": "Cross-entropy behavioral cloning loss over expert branching decisions, optimized with Adam after prenorm pretraining.",
+    "evidence": [
+      "Equation (3)",
+      "Section 4.1",
+      "Supplementary Section 2.1"
+    ],
+    "status": "done"
+  },
+  "inference_policy": {
+    "summary": "Use the policy scores over candidate fractional variables to pick the highest-ranked branching variable during SCIP's branch-and-bound search.",
+    "evidence": [
+      "Section 3.3",
+      "Section 4.3",
+      "Section 5.1"
+    ],
+    "status": "done"
+  },
+  "novel_contribution": {
+    "summary": "The paper combines bipartite GCNN state encoding with imitation learning from strong branching decisions, reduces manual feature engineering, and shows competitive or superior branching performance inside a full MILP solver with generalization to larger instances.",
+    "evidence": [
+      "Abstract",
+      "Section 1",
+      "Section 2",
+      "Section 5.2",
+      "Section 7"
+    ],
+    "status": "done"
+  },
+  "global_evidence_pointers": [
+    "Figure 2",
+    "Equation (3)",
+    "Section 4.1",
+    "Section 4.2",
+    "Section 4.3",
+    "Section 5.1",
+    "Section 5.2",
+    "Supplementary Section 1",
+    "Supplementary Section 2.1"
+  ],
+  "unresolved_questions": [
+    "Exact per-tensor feature dimensionalities are not all spelled out in the main text and partly rely on the supplementary materials and released code.",
+    "The decoding rule is effectively top-ranked candidate selection, but the paper emphasizes the probability distribution and ranking perspective more than a separate inference subsection."
+  ]
+}

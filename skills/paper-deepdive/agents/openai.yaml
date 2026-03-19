@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper Deepdive"
+  short_description: "Technical second-pass paper analysis"
+  default_prompt: "Use $paper-deepdive to deepen the technical notes for the current paper."

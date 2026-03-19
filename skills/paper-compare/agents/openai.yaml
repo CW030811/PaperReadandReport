@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper Compare"
+  short_description: "Cross-paper repository comparison"
+  default_prompt: "Use $paper-compare to compare the current paper against prior papers in this repository."

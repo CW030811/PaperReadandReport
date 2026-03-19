@@ -1,0 +1,47 @@
+{
+  "paper_title": "",
+  "paper_folder": "",
+  "scan_date": "",
+  "research_question": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "high_level_algorithmic_idea": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "training_label_dataset": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "network_structure": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "network_output": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "loss_function": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "inference_policy": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "novel_contribution": {
+    "summary": "",
+    "evidence": [],
+    "status": "pending"
+  },
+  "global_evidence_pointers": [],
+  "unresolved_questions": []
+}
