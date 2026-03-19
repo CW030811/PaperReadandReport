@@ -89,7 +89,7 @@ Before you start work on a device, pull the latest changes:
 - Mac:
 
   ```bash
-  ./scripts/update_repo.sh
+  bash scripts/update_repo.sh
   ```
 
 After you finish a work session, commit and push everything back to GitHub:
@@ -103,10 +103,19 @@ After you finish a work session, commit and push everything back to GitHub:
 - Mac:
 
   ```bash
-  ./scripts/sync_repo.sh origin "notes: update current paper"
+  bash scripts/sync_repo.sh origin "notes: update current paper"
   ```
 
 These helper scripts stop if the remote is missing, if the repo is in detached HEAD state, or if a pull would overwrite uncommitted work.
+
+### Switching devices checklist
+
+When moving from Windows to Mac or from Mac to Windows:
+
+1. On the device you are leaving, run the sync script and wait for push to finish.
+2. On the device you are starting, run the update script before editing anything.
+3. Keep both devices on `main` unless you intentionally start using branches.
+4. Avoid editing the same file on both devices before syncing, or Git will require a manual conflict resolution.
 
 ## Fixed Trigger Prompts
 
