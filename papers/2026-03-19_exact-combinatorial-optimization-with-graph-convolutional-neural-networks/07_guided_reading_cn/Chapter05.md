@@ -89,9 +89,55 @@ In this work we choose instead to learn directly from an expert branching rule, 
 - 你可以直接问：“为什么 episode length 和 performance 成正比？”
 - 你也可以问：“这里的 imitation learning 到底是不是 behavioral cloning？”
 - 如果你已经吃透这一章，直接写“这章吃透了”或“进入下一章”。
+- Q1：为什么 episode length 和 performance 成正比？
+- Q2：这里的 imitation learning 到底是不是 behavioral cloning？
+- Q3：instance-specific MDP 到底是什么意思？
+
 
 ## 9. Codex 补充讲解
 - Round 0: 已初始化，等待你的问题。
+- Round 1: 回答你在 Chapter 5 留下的三个问题。
+- Q1 回答：为什么 `episode length` 和 performance 成正比？
+  - 因为在这个任务里，一个 episode 不是固定步数的游戏，而是“把一个 MILP instance 解到结束”的整个过程。
+  - 如果 policy 好，branching 决策质量高，搜索树通常更小，需要展开的节点更少，整个求解过程就更短。
+  - 如果 policy 差，branching 决策会把树带偏，节点数暴涨，求解过程就会更长。
+- 所以作者这里说的“episode length is proportional to performance”，更准确地理解为：
+  - performance 越差，episode 往往越长；
+  - performance 越好，episode 往往越短。
+- 这不是在强调一个精确数学比例关系，而是在强调一个训练上的坏消息：
+  - RL 刚开始时 policy 通常很差；
+  - policy 一差，episode 就很长；
+  - episode 一长，收集经验和更新参数就会变得非常慢。
+- 这也是为什么作者说 standard RL 在 early training 会慢得“prohibitively long”。
+- Q2 回答：这里的 `imitation learning` 到底是不是 `behavioral cloning`？
+  - 从这篇论文的完整方法来看，是的，最后落地的具体做法就是 `behavioral cloning`。
+  - 但要注意章节层次：
+    当前这一小节先只说“we choose instead to learn directly from an expert branching rule”，也就是先在范式层面表态：我们不用 RL，改走 imitation learning。
+  - 到后面的 Section 4.1，作者才把这件事具体化为：
+    用 expert action 做监督，
+    用交叉熵去学 policy，
+    这就是典型的 behavioral cloning 路线。
+- 所以你可以这样记：
+  - imitation learning 是大类；
+  - behavioral cloning 是本文采用的具体实现方式。
+- 换成更口语的话说：
+  - imitation learning 回答的是“跟谁学”；
+  - behavioral cloning 回答的是“怎么学这个老师的动作”。
+- Q3 回答：`instance-specific MDP` 到底是什么意思？
+  - 它的意思是：一旦你抽中了某个具体 MILP instance，后面整棵搜索树的状态空间、可行动作、转移结构，基本都围绕这个实例展开。
+  - 也就是说，虽然形式上我们都把问题写成 MDP，但每个实例其实都会诱导出一个属于它自己的巨大决策过程。
+- 你可以把它理解成两层：
+  - 在“任务分布”层面，我们是在很多实例上学习。
+  - 在“单个 episode”层面，一旦实例固定，这个 episode 就进入了一个高度依赖该实例结构的 MDP。
+- 这会带来两个困难：
+  - 第一，不同实例之间共享的决策结构没有那么简单直接。
+  - 第二，单个实例诱导出的搜索树可能非常大，导致单个 MDP 本身就很难探索。
+- 所以作者这里不是在说“MDP 理论失效”，而是在说：
+  - 虽然 MDP formalization 没问题；
+  - 但真要用 RL 去优化这些又大、又长、又实例依赖的 MDP，训练成本会很高。
+- 一个适合这章的简化记法是：
+  - generic MDP framing：帮助我们定义问题；
+  - instance-specific MDP reality：提醒我们直接做 RL 会很难训。
 - 如果你提问，我会优先补三类内容：
   - 为什么这个任务上的 RL 特别慢
   - instance-specific MDP 到底是什么意思
