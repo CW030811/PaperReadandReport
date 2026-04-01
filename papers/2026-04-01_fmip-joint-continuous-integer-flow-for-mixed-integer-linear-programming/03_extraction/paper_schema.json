@@ -1,0 +1,78 @@
+{
+  "paper_title": "FMIP: Joint Continuous-Integer Flow For Mixed-Integer Linear Programming",
+  "paper_folder": "papers\\2026-04-01_fmip-joint-continuous-integer-flow-for-mixed-integer-linear-programming",
+  "scan_date": "2026-04-01",
+  "research_question": {
+    "summary": "Jointly model integer and continuous variables in MILP solution generation so learning-based heuristics can better guide downstream solvers.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "high_level_algorithmic_idea": {
+    "summary": "Use a conditional flow matching framework to generate complete MILP solutions over both integer and continuous variables, then apply holistic guidance based on objective values and constraint violations during sampling.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "training_label_dataset": {
+    "summary": "The method learns from MILP solution distributions and is evaluated on eight standard MILP benchmarks, though the exact benchmark names are not fully recovered in this quick scan.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "uncertain"
+  },
+  "network_structure": {
+    "summary": "A backbone-agnostic joint continuous-integer generative framework centered on flow-based solution modeling rather than a single fixed graph encoder.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "network_output": {
+    "summary": "A complete candidate MILP solution containing both integer and continuous variables.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "loss_function": {
+    "summary": "Conditional flow matching is explicitly named as the training paradigm, but the exact full loss formulation is not fully extracted in this first pass.",
+    "evidence": [
+      "Section 1 Introduction"
+    ],
+    "status": "uncertain"
+  },
+  "inference_policy": {
+    "summary": "Iteratively sample and refine a full solution trajectory with holistic guidance from objective feedback and constraint violations, then use the result with downstream solvers.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "novel_contribution": {
+    "summary": "The first generative MILP framework that jointly models integer and continuous variables, enabling a stronger guidance mechanism and better compatibility with diverse backbones and solvers.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "global_evidence_pointers": [
+    "Abstract",
+    "Section 1 Introduction",
+    "Figure 1",
+    "arXiv 2507.23390 front matter"
+  ],
+  "unresolved_questions": [
+    "The exact benchmark families and full training loss need a slower read.",
+    "The way FMIP plugs into specific downstream solvers should be verified in the experiments section."
+  ]
+}

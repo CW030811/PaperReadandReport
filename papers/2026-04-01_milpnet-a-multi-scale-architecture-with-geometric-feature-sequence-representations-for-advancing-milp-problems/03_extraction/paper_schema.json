@@ -1,0 +1,72 @@
+{
+  "paper_title": "MILPnet: A Multi-Scale Architecture with Geometric Feature Sequence Representations for Advancing MILP Problems",
+  "paper_folder": "papers\\2026-04-01_milpnet-a-multi-scale-architecture-with-geometric-feature-sequence-representations-for-advancing-milp-problems",
+  "scan_date": "2026-04-01",
+  "research_question": {
+    "summary": "Replace graph-based MILP encoders with a more expressive representation that can handle Foldable MILPs and support core optimization-related prediction tasks.",
+    "evidence": [
+      "OpenReview abstract",
+      "ICLR 2026 listing"
+    ],
+    "status": "done"
+  },
+  "high_level_algorithmic_idea": {
+    "summary": "Represent MILPs as geometric sequences of constraint and objective features, then process them with a multi-scale hybrid attention mechanism instead of a GNN.",
+    "evidence": [
+      "OpenReview abstract"
+    ],
+    "status": "done"
+  },
+  "training_label_dataset": {
+    "summary": "The paper studies Foldable MILPs and also evaluates on real-world MILP benchmarks, but the exact benchmark families are not fully recovered in this quick scan.",
+    "evidence": [
+      "OpenReview abstract"
+    ],
+    "status": "uncertain"
+  },
+  "network_structure": {
+    "summary": "A multi-scale hybrid attention architecture over geometric feature sequences, designed as an alternative to graph neural MILP encoders.",
+    "evidence": [
+      "OpenReview abstract"
+    ],
+    "status": "done"
+  },
+  "network_output": {
+    "summary": "Approximation targets include feasibility, optimal objective value, and optimal solution mappings.",
+    "evidence": [
+      "OpenReview abstract"
+    ],
+    "status": "done"
+  },
+  "loss_function": {
+    "summary": "The exact multi-task or task-specific training loss is not specified in the abstract-level scan.",
+    "evidence": [
+      "OpenReview abstract"
+    ],
+    "status": "uncertain"
+  },
+  "inference_policy": {
+    "summary": "Use the learned sequence representation for prediction tasks tied to MILP solving and integrate it into an end-to-end solver pipeline on real-world benchmarks.",
+    "evidence": [
+      "OpenReview abstract"
+    ],
+    "status": "done"
+  },
+  "novel_contribution": {
+    "summary": "MILPnet challenges the sufficiency of GNN representations for MILP, especially on Foldable instances, and replaces them with a multi-scale sequence-based geometric representation with theoretical and empirical support.",
+    "evidence": [
+      "OpenReview abstract",
+      "ICLR 2026 listing"
+    ],
+    "status": "done"
+  },
+  "global_evidence_pointers": [
+    "OpenReview abstract",
+    "ICLR 2026 listing",
+    "OpenReview metadata"
+  ],
+  "unresolved_questions": [
+    "The exact benchmark families and solver-pipeline details need a full read.",
+    "The exact definition and practical importance of Foldable MILPs should be checked more carefully."
+  ]
+}

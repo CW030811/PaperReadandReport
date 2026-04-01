@@ -1,0 +1,79 @@
+{
+  "paper_title": "Constraint Matters: Multi-Modal Representation for Reducing Mixed-Integer Linear programming",
+  "paper_folder": "papers\\2026-04-01_constraint-matters-multi-modal-representation-for-reducing-mixed-integer-linear-programming",
+  "scan_date": "2026-04-01",
+  "research_question": {
+    "summary": "Learn a constraint-side model reduction strategy for MILP that predicts critical constraints and accelerates solving without sacrificing feasibility or solution quality.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "high_level_algorithmic_idea": {
+    "summary": "Label tight constraints at optimality, heuristically select critical tight constraints with an information-theoretic rule, and learn to predict them using a multi-modal representation of abstract-level and instance-level MILP structure.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "training_label_dataset": {
+    "summary": "Training labels are critical tight constraints derived from optimal solutions. The paper reports experiments on large-scale MILP domains, though the exact benchmark families are not fully recovered in this quick scan.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "uncertain"
+  },
+  "network_structure": {
+    "summary": "A multi-modal representation that integrates abstract-model information and instance-level MILP structure to improve critical-constraint prediction.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "network_output": {
+    "summary": "Predictions of which inequality constraints are critical and should be reduced to equalities in the simplified MILP.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "loss_function": {
+    "summary": "The exact training loss is not explicit in this first-pass scan; it is likely a supervised objective over critical-constraint prediction.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "uncertain"
+  },
+  "inference_policy": {
+    "summary": "Predict critical constraints, reduce those inequalities to equalities, and solve the resulting reduced MILP with a downstream solver.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "novel_contribution": {
+    "summary": "A constraint-based MILP reduction framework that focuses on predicting critical constraints rather than variables, supported by a multi-modal representation spanning abstract and instance-level formulations.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "global_evidence_pointers": [
+    "Abstract",
+    "Section 1 Introduction",
+    "Figure 1",
+    "arXiv 2508.18742 front matter"
+  ],
+  "unresolved_questions": [
+    "The exact benchmark families and train-test protocol need a slower read.",
+    "The exact supervised loss and label construction details beyond the high-level description should be verified."
+  ]
+}

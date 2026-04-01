@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paper PPT"
+  short_description: "Build concise research PPT decks"
+  default_prompt: "Use $paper-ppt to turn this paper workspace into a concise research presentation deck with equations, figures, and editable PPT output."

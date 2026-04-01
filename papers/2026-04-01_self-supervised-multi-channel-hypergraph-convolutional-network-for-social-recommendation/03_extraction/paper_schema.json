@@ -1,0 +1,80 @@
+{
+  "paper_title": "Self-Supervised Multi-Channel Hypergraph Convolutional Network for Social Recommendation",
+  "paper_folder": "papers\\2026-04-01_self-supervised-multi-channel-hypergraph-convolutional-network-for-social-recommendation",
+  "scan_date": "2026-04-01",
+  "research_question": {
+    "summary": "Improve social recommendation by modeling high-order user relations instead of relying only on pairwise social links.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "high_level_algorithmic_idea": {
+    "summary": "Build motif-induced hypergraphs for multiple high-order relation patterns, encode them with a multi-channel hypergraph convolutional network, and add hierarchical mutual-information-based self-supervision.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "training_label_dataset": {
+    "summary": "The main task learns from observed user-item interactions, and the auxiliary task learns from hypergraph structure. The paper uses multiple real-world datasets, but the exact dataset names are not fully recovered in this quick scan.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "uncertain"
+  },
+  "network_structure": {
+    "summary": "A multi-channel hypergraph convolutional network in which each channel encodes one motif-induced hypergraph corresponding to a distinct high-order relation pattern.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction",
+      "Figure 1"
+    ],
+    "status": "done"
+  },
+  "network_output": {
+    "summary": "User and item representations used to score candidate items and generate recommendation rankings.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "loss_function": {
+    "summary": "A joint objective that combines the recommendation task with an auxiliary self-supervised mutual-information maximization task; the exact recommendation loss is not explicit in this quick scan.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "uncertain"
+  },
+  "inference_policy": {
+    "summary": "Use learned user and item embeddings to rank items for each user in the social recommendation setting.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "novel_contribution": {
+    "summary": "The paper combines multi-channel hypergraph convolution and self-supervised structural learning to capture high-order social relations beyond pairwise GNN-based social recommenders.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction"
+    ],
+    "status": "done"
+  },
+  "global_evidence_pointers": [
+    "Abstract",
+    "Section 1 Introduction",
+    "Figure 1",
+    "arXiv 2101.06448 front matter"
+  ],
+  "unresolved_questions": [
+    "The exact dataset list and evaluation protocol need a slower read.",
+    "The exact recommendation loss and channel aggregation details should be verified."
+  ]
+}

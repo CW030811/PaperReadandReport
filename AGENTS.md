@@ -18,6 +18,7 @@ Read the matching `SKILL.md` before starting stage work.
 Use `skills/paper-scan` when the user asks for first-pass extraction, first read, paper scan, 首轮拆解, or 8-field structured output.
 Use `skills/paper-deepdive` when the user asks for deeper technical analysis, ambiguities, output/loss/inference alignment, or novelty inspection.
 Use `skills/paper-to-slides` when the user asks for a reading report, slide outline, presentation structure, or speaker notes.
+Use `skills/paper-ppt` when the user asks for a 科研汇报PPT, PowerPoint deck, `.pptx`, slide deck template, slide polishing, or final presentation slides with formulas, figures, or experiment visuals.
 Use `skills/paper-compare` when the user asks for cross-paper comparison, prior-work comparison, or repository-wide synthesis.
 Use `skills/paper-guided-read-cn` when the user asks for 中文领读, 陪读, 逐章讲解, chapter-by-chapter reading, interactive Q&A inside chapter notes, or advancing to the next chapter only after confirming understanding.
 
@@ -61,6 +62,7 @@ Every paper extraction must cover these eight fields:
 - Keep one slide = one heading in `slides_outline.md`.
 - Keep comparison output in a single markdown table unless the user asks for more.
 - Prefer minimal rewrites when refining existing outputs.
+- Optional editable PPT artifacts should stay under `05_slides/ppt/` and must not replace `05_slides/slides_outline.md`.
 - In markdown files, write math in Preview-renderable LaTeX form: use `$...$` for inline math and `$$...$$` for display math instead of plain Unicode formula text.
 - `07_guided_reading_cn/` is an optional teaching track for interactive Chinese guided reading. It must not replace or weaken the required standard outputs.
 
