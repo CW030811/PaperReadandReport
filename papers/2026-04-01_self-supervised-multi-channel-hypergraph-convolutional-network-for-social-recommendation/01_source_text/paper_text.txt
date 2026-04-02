@@ -1,0 +1,922 @@
+===== Page 1 =====
+Self-Supervised Multi-Channel Hypergraph Convolutional
+Network for Social Recommendation
+Junliang Yu Hongzhi Yin∗ Jundong Li
+The University of Queensland The University of Queensland University of Virginia
+jl.yu@uq.edu.au h.yin1@uq.edu.au jundong@virginia.edu
+Qinyong Wang Nguyen Quoc Viet Hung Xiangliang Zhang
+The University of Queensland Griffith University King Abdullah University of Science
+qinyong.wang@uq.edu.au quocviethung1@gmail.com and Technology
+xiangliang.zhang@kaust.edu.sa
+ABSTRACT ACM Reference Format:
+Social relations are often used to improve recommendation quality Junliang Yu, Hongzhi Yin, Jundong Li, Qinyong Wang, Nguyen Quoc Viet
+Hung, and Xiangliang Zhang. 2021. Self-Supervised Multi-Channel Hyper-
+when user-item interaction data is sparse in recommender systems.
+Most existing social recommendation models exploit pairwise rela- graph Convolutional Network for Social Recommendation. In Proceedings of
+the Web Conference 2021 (WWW ’21), April 19–23, 2021, Ljubljana, Slovenia.
+tions to mine potential user preferences. However, real-life inter-
+ACM, New York, NY, USA, 11 pages. https://doi.org/10.1145/3442381.3449844
+actions among users are very complex and user relations can be
+high-order. Hypergraph provides a natural way to model high-order
+relations, while its potentials for improving social recommenda-
+tion are under-explored. In this paper, we fill this gap and propose
+a multi-channel hypergraph convolutional network to enhance
+social recommendation by leveraging high-order user relations.
+Friends Friends Buy Buy Buy Buy
+Technically, each channel in the network encodes a hypergraph
+that depicts a common high-order user relation pattern via hyper-
+graph convolution. By aggregating the embeddings learned through Friends Friends
+multiple channels, we obtain comprehensive user representations
+to generate recommendation results. However, the aggregation Figure 1: The common types of high-order user relations in
+operation might also obscure the inherent characteristics of differ- social recommender systems.
+ent types of high-order connectivity information. To compensate
+for the aggregating loss, we innovatively integrate self-supervised 1 INTRODUCTION
+learning into the training of the hypergraph convolutional network
+Over the past decade, the social media boom has dramatically
+to regain the connectivity information with hierarchical mutual
+changed people’s ways of thinking and behaving. It has been re-
+information maximization. Extensive experiments on multiple real-
+vealed that people may alter their attitudes and behaviors in re-
+world datasets demonstrate the superiority of the proposed model
+sponse to what they perceive their friends might do or think, which
+over the current SOTA methods, and the ablation study verifies
+is known as the social influence [7]. Meanwhile, there are also
+the effectiveness and rationale of the multi-channel setting and the
+studies [25] showing that people tend to build connections with
+self-supervised task. The implementation of our model is available
+others who have similar preferences with them, which is called
+at https://github.com/Coder-Yu/QRec.
+the homophily. Based on these findings, social relations are often
+integrated into recommender systems to mitigate the data spar-
+CCS CONCEPTS
+sity issue [13, 33]. Generally, in a social recommender system, if
+• Information systems → Recommender systems; Social rec- a user has few interactions with items, the system would rely on
+ommendation. her friends’ interactions to infer her preference and generate better
+recommendations. Upon this paradigm, a large number of social
+KEYWORDS recommendation models have been developed [12, 21, 23, 55, 57, 61]
+Social Recommendation, Self-supervised Learning, Hypergraph and have shown stronger performance compared with general rec-
+Learning, Graph Convolutional Network, Recommender Systems ommendation models.
+Recently, graph neural networks (GNNs) [43] have achieved
+∗Corresponding author and having equal contribution with the first author.
+great success in a wide range of areas. Owing to their powerful
+This paper is published under the Creative Commons Attribution 4.0 International capability in modeling relational data, GNNs-based models also
+(CC-BY 4.0) license. Authors reserve their rights to disseminate the work on their
+have shown prominent performance in social recommendation
+personal and corporate Web sites with the appropriate attribution.
+[9, 19, 40–42, 58]. However, a key limitation of these GNNs-based
+WWW ’21, April 19–23, 2021, Ljubljana, Slovenia
+© 2021 IW3C2 (International World Wide Web Conference Committee), published social recommendation models is that they only exploit the sim-
+under Creative Commons CC-BY 4.0 License. ple pairwise user relations and ignore the ubiquitous high-order
+ACM ISBN 978-1-4503-8312-7/21/04.
+https://doi.org/10.1145/3442381.3449844 relations among users. Although the long-range dependencies of
+2202
+beF
+72
+]RI.sc[
+4v84460.1012:viXra
+
+
+===== Page 2 =====
+WWW ’21, April 19–23, 2021, Ljubljana, Slovenia Yu and Yin, et al.
+relations (i.e. transitivity of friendship), which are also considered The major contributions of this paper are summarized as follows:
+high-order, can be captured by using k graph neural layers to in- • We investigate the potentials of fusing hypergraph modeling and
+corporate features from k-hop social neighbors, these GNNs-based graph neural networks in social recommendation by exploiting
+models are unable to formulate and capture the complex high-order multiple types of high-order user relations under a multi-channel
+user relation patterns (as shown in Fig. 1) beyond pairwise relations. setting.
+For example, it is natural to think that two users who are socially • We innovatively integrate self-supervised learning into the train-
+connected and also purchased the same item have a stronger rela- ing of the hypergraph convolutional network and show that a
+tionship than those who are only socially connected, whereas the self-supervised auxiliary task can significantly improve the social
+common purchase information in the former is often neglected in recommendation task.
+previous social recommendation models. • We conduct extensive experiments on multiple real-world datasets
+Hypergraph [4], which generalizes the concept of edge to make to demonstrate the superiority of the proposed model and thor-
+it connect more than two nodes, provides a natural way to model oughly ablate the model to investigate the effectiveness of each
+complex high-order relations among users. Despite the great ad- component with an ablation study.
+vantages over the simple graph in user modeling, the strengths of
+hypergraph are under-explored in social recommendation. In this 2 RELATED WORK
+paper, we fill this gap by investigating the potentials of fusing hy-
+2.1 Social Recommendation
+pergraph modeling and graph convolutional networks, and propose
+a Multi-channel Hypergraph Convolutional Network (MHCN) to As suggested by the social science theories [7, 25], users’ prefer-
+enhance social recommendation by exploiting high-order user re- ences and decisions are often influenced by their friends. Based on
+lations. Technically, we construct hypergraphs by unifying nodes this fact, social relations are integrated into recommender systems
+that form specific triangular relations, which are instances of a set to alleviate the issue of data sparsity. Early exploration of social
+of carefully designed triangular motifs with underlying semantics recommender systems mostly focuses on matrix factorization (MF),
+(shown in Fig. 2). As we define multiple categories of motifs which which has a nice probabilistic interpretation with Gaussian prior
+concretize different types of high-order relations such as ‘having a and is the most used technique in social recommendation regime.
+mutual friend’, ‘friends purchasing the same item’, and ‘strangers The extensive use of MF marks a new phase in the research of
+but purchasing the same item’ in social recommender systems, each recommender systems. A multitude of studies employ MF as their
+channel of the proposed hypergraph convolutional network under- basic model to exploit social relations since it is very flexible for MF
+takes the task of encoding a different motif-induced hypergraph. to incorporate prior knowledge. The common ideas of MF-based
+By aggregating multiple user embeddings learned through multiple social recommendation algorithms can be categorized into three
+channels, we can obtain the comprehensive user representations groups: co-factorization methods [22, 46], ensemble methods [20],
+which are considered to contain multiple types of high-order rela- and regularization methods [23]. Besides, there are also studies
+tion information and have the great potentials to generate better using socially-aware MF to model point-of-interest [48, 51, 52],
+recommendation results with the item embeddings. preference evolution [39], item ranking [55, 61], and relation gen-
+However, despite the benefits of the multi-channel setting, the ag- eration [11, 57].
+gregation operation might also obscure the inherent characteristics Over the recent years, the boom of deep learning has broadened
+of different types of high-order connectivity information [54], as dif- the ways to explore social recommendation. Many research efforts
+ferent channels would learn embeddings with varying distributions demonstrate that deep neural models are more capable of capturing
+on different hypergraphs. To address this issue and fully inherit the high-level latent preferences [49, 50]. Specifically, graph neural net-
+rich information in the hypergraphs, we innovatively integrate a works (GNNs) [63] have achieved great success in this area, owing
+self-supervised task [15, 37] into the training of the multi-channel to their strong capability to model graph data. GraphRec [9] is the
+hypergraph convolutional network. Unlike existing studies which first to introduce GNNs to social recommendation by modeling the
+enforce perturbations on graphs to augment the ground-truth [53], user-item and user-user interactions as graph data. DiffNet [41] and
+we propose to construct self-supervision signals by exploiting the its extension DiffNet++ [40] model the recursive dynamic social
+hypergraph structures, with the intuition that the comprehensive diffusion in social recommendation with a layer-wise propagation
+user representation should reflect the user node’s local and global structure. Wu et al. [42] propose a dual graph attention network
+high-order connectivity patterns in different hypergraphs. Con- to collaboratively learn representations for two-fold social effects.
+cretely, we leverage the hierarchy in the hypergraph structures Song et al. develop DGRec [34] to model both users’ session-based
+and hierarchically maximizes the mutual information between rep- interests as well as dynamic social influences. Yu et al. [58] propose
+resentations of the user, the user-centered sub-hypergraph, and a deep adversarial framework based on GCNs to address the com-
+the global hypergraph. The mutual information here measures the mon issues in social recommendation. In summary, the common
+structural informativeness of the sub- and the whole hypergraph idea of these works is to model the user-user and user-item inter-
+towards inferring the user features through the reduction in local actions as simple graphs with pairwise connections and then use
+and global structure uncertainty. Finally, we unify the recommenda- multiple graph neural layers to capture the node dependencies.
+tion task and the self-supervised task under a primary & auxiliary
+learning framework. By jointly optimizing the two tasks and lever- 2.2 Hypergraph in Recommender Systems
+aging the interplay of all the components, the performance of the Hypergraph [4] provides a natural way to model complex high-
+recommendation task achieves significant gains. order relations and has been extensively employed to tackle various
+
+
+===== Page 3 =====
+Self-Supervised Multi-Channel Hypergraph Convolutional Network for Social Recommendation WWW ’21, April 19–23, 2021, Ljubljana, Slovenia
+problems. With the development of deep learning, some studies this work can be a corroboration of the effectiveness of social self-
+combine GNNs and hypergraphs to enhance representation learn- supervision signals.
+ing. HGNN [10] is the first work that designs a hypergraph convolu-
+tion operation to handle complex data correlation in representation 3 PROPOSED MODEL
+learning from a spectral perspective. Bai et al. [2] introduce hyper-
+3.1 Preliminaries
+graph attention to hypergraph convolutional networks to improve
+their capacity. However, despite the great capacity in modeling com- Let 𝑈 = {𝑢 1 , 𝑢 2 , ..., 𝑢 𝑚} denote the user set (|𝑈 | = 𝑚), and 𝐼 =
+plex data, the potentials of hypergraph for improving recommender {𝑖 1 , 𝑖 2 , ..., 𝑖 𝑛} denote the item set (|𝐼 | = 𝑛). I(𝑢) is the set of user
+systems have been rarely explored. There are only several studies consumption in which items consumed by user 𝑢 are included. 𝑹 ∈
+focusing on the combination of these two topics. Bu et al. [5] intro- R𝑚×𝑛 is a binary matrix that stores user-item interactions. For each
+duce hypergraph learning to music recommender systems, which pair (𝑢, 𝑖), 𝑟 𝑢𝑖 = 1 indicates that user 𝑢 consumed item 𝑖 while 𝑟 𝑢𝑖 =
+is the earliest attempt. The most recent combinations are HyperRec 0 means that item 𝑖 is unexposed to user 𝑢, or user 𝑢 is not interested
+[38] and DHCF [16], which borrow the strengths of hypergraph in item 𝑖. In this paper, we focus on top-K recommendation, and 𝑟^𝑢𝑖
+neural networks to model the short-term user preference for next- denotes the probability of item 𝑖 to be recommended to user 𝑢. As for
+item recommendation and the high-order correlations among users the social relations, we use 𝑺 ∈ R𝑚×𝑚 to denote the relation matrix
+and items for general collaborative filtering, respectively. As for the which is asymmetric because we work on directed social networks.
+applications in social recommendation, HMF [62] uses hypergraph In our model, we have multiple convolutional layers, and we use
+topology to describe and analyze the interior relation of social {𝑷 (1), 𝑷 (2), · · · , 𝑷 (𝑙) } ∈ R𝑚×𝑑 and {𝑸 (1), 𝑸 (2), · · · , 𝑸 (𝑙) } ∈ R𝑛×𝑑
+network in recommender systems, but it does not fully exploit to denote the user and item embeddings of size 𝑑 learned at each
+high-order social relations since HMF is a hybrid recommenda- layer, respectively. In this paper, we use bold capital letters to denote
+tion model. LBSN2Vec [47] is a social-aware POI recommendation matrices and bold lowercase letters to denote vectors.
+model that builds hyperedges by jointly sampling friendships and Definition 1: Let 𝐺 = (𝑉 , 𝐸) denote a hypergraph, where 𝑉 is
+check-ins with random walk, but it focuses on connecting different the vertex set containing 𝑁 unique vertices and 𝐸 is the edge set
+types of entities instead of exploiting the high-order social network containing 𝑀 hyperedges. Each hyperedge 𝜖 ∈ 𝐸 can contain any
+structures. number of vertices and is assigned a positive weight𝑊 𝜖𝜖 , and all the
+weights formulate a diagonal matrix 𝑾 ∈ R𝑀×𝑀 . The hypergraph
+can be represented by an incidence matrix 𝑯 ∈ R𝑁 ×𝑀 where 𝐻 𝑖𝜖 =
+2.3 Self-Supervised Learning 1 if the hyperedge 𝜖 ∈ 𝐸 contains a vertex 𝑣 𝑖 ∈ 𝑉 , otherwise 0. The
+Self-supervised learning [15] is an emerging paradigm to learn with vertex and edge degree matrices are diagonal matrices denoted by
+the ground-truth samples obtained from the raw data. It was firstly 𝑫 and 𝑳, respectively, where 𝐷 𝑖𝑖 = (cid:205) 𝜖 𝑀 =1 𝑊 𝜖𝜖 𝐻 𝑖𝜖 ; 𝐿 𝜖𝜖 = (cid:205) 𝑖 𝑁 =1 𝐻 𝑖𝜖 .
+used in the image domain [1, 59] by rotating, cropping or coloriz- It should be noted that, in this paper, 𝑊 𝜖𝜖 is uniformly assigned 1
+ing the image to create auxiliary supervision signals. The latest and hence 𝑾 is an identity matrix.
+advances in this area have extended self-supervised learning to
+graph representation learning [28, 29, 35, 37]. These studies mainly 3.2 Multi-Channel Hypergraph Convolutional
+develop self-supervision tasks from the perspective of investigating Network for Social Recommendation
+graph structure. Node properties such as degree, proximity, and
+In this section, we present our model MHCN, which stands for
+attributes, which are seen as local structure information, are often
+Multi-channel Hypergraph Convolutional Network. In Fig. 3, the
+used as the ground truth to fully exploit the unlabeled data [17].
+schematic overview of our model is illustrated.
+For example, InfoMotif [31] models attribute correlations in mo-
+tif structures with mutual information maximization to regularize 3.2.1 Hypergraph Construction. To formulate the high-order infor-
+graph neural networks. Meanwhile, global structure information mation among users, we first align the social network and user-item
+like node pair distance is also harnessed to facilitate representa- interaction graph in social recommender systems and then build
+tion learning [35]. Besides, contrasting congruent and incongruent hypergraphs over this heterogeneous network. Unlike prior models
+views of graphs with mutual information maximization [29, 37] is which construct hyperedges by unifying given types of entities
+another way to set up a self-supervised task, which has also shown [5, 47], our model constructs hyperedges according to the graph
+promising results. structure. As the relations in social networks are often directed, the
+As the research of self-supervised learning is still in its infancy, connectivity of social networks can be of various types. In this pa-
+there are only several works combining it with recommender sys- per, we use a set of carefully designed motifs to depict the common
+tems [24, 44, 45, 64]. These efforts either mine self-supervision types of triangular structures in social networks, which guide the
+signals from future/surrounding sequential data [24, 45], or mask hypergraph construction.
+attributes of items/users to learn correlations of the raw data [64]. Motif, as the specific local structure involving multiple nodes, is
+However, these thoughts cannot be easily adopted to social rec- first introduced in [26]. It has been widely used to describe com-
+ommendation where temporal factors and attributes may not be plex structures in a wide range of networks. In this paper, we only
+available. The most relevant work to ours is GroupIM [32], which focus on triangular motifs because of the ubiquitous triadic closure
+maximizes mutual information between representations of groups in social networks, but our model can be seamlessly extended to
+and group members to overcome the sparsity problem of group handle on more complex motifs. Fig. 2 shows all the used trian-
+interactions. As the group can be seen as a special social clique, gular motifs. It has been revealed that M − M are crucial for
+1 7
+
+
+===== Page 4 =====
+WWW ’21, April 19–23, 2021, Ljubljana, Slovenia Yu and Yin, et al.
+M1 M2 M3 M4 M5 M6 M7 M8 M9 M10
+Follow Purchase Social Motifs Joint Motifs Purchase Motif
+Figure 2: Triangle motifs used in our work. The green circles denote users and the yellow circles denote items.
+social computing [3], and we further design M − M to involve Table 1: Computation of motif-induced adjacency matrices.
+8 10
+user-item interactions to complement. Given motifs M − M ,
+1 10
+we categorize them into three groups according to the underlying Motif Matrix Computation 𝑨𝑀𝑖 =
+semantics. M 1 − M 7 summarize all the possible triangular rela- M 1 𝑪 = (𝑼 𝑼 ) ⊙ 𝑼𝑇 𝑪 + 𝑪⊤
+tions in explicit social networks and describe the high-order social M 2 𝑪 = (𝑩𝑼 ) ⊙ 𝑼𝑇 + (𝑼 𝑩) ⊙ 𝑼𝑇 + (𝑼 𝑼 ) ⊙ 𝑩 𝑪 + 𝑪⊤
+connectivity like ‘having a mutual friend’. We name this group M 3 𝑪 = (𝑩𝑩) ⊙ 𝑼 + (𝑩𝑼 ) ⊙ 𝑩 + (𝑼 · 𝑩) ⊙ 𝑩 𝑪 + 𝑪⊤
+‘Social Motifs’. M 8 − M 9 represent the compound relation, that M 4 𝑪 = (𝑩𝑩) ⊙ 𝑩 𝑪
+is, ‘friends purchasing the same item’. This type of relation can M 5 𝑪 = (𝑼 𝑼 ) ⊙ 𝑼 + (𝑼 𝑼𝑇 ) ⊙ 𝑼 + (𝑼𝑇 𝑼 ) ⊙ 𝑼 𝑪 + 𝑪⊤
+‘ b J e oi s n e t e M n o a t s if a s’. s F ig in n a a l l ly o , f w st e re s n h g o t u h ld en a e ls d o t c ie o , n a s n id d e w r u e s n e a rs m w e h M o h 8 a − ve M no 9 M M 6 7 𝑪 𝑪 = = ( ( 𝑼 𝑼𝑇 𝑩 𝑩 ) ) ⊙ ⊙ 𝑼 𝑼 + 𝑇 (𝑩 + 𝑼 (𝑩 𝑇 𝑼 ) ) ⊙ ⊙ 𝑼 𝑼 𝑇 + + ( ( 𝑼 𝑼𝑇 𝑼 𝑼 𝑇 ) ) ⊙ ⊙ 𝑩 𝑩 𝑪 𝑪
+explicit social connections. So, M is non-closed and defines the M 8 𝑪 = (𝑹𝑹𝑇 ) ⊙ 𝑩 𝑪
+implicit high-order social relation 1 t 0 hat users who are not socially M 9 𝑪 = (𝑹𝑹𝑇 ) ⊙ 𝑼 𝑪 + 𝑪⊤
+connected but purchased the same item. We name M
+10
+‘Purchase M 10 𝑪 = 𝑹𝑹𝑇 𝑪
+Motif ’. Under the regulation of these three types of motifs, we can
+construct three hypergraphs that contain different high-order user
+relation patterns. We use the incidence matrices 𝑯 𝑠 , 𝑯 𝑗 and 𝑯 𝑝 The difference is that we follow the suggestion in [6, 14] to remove
+the learnable matrix for linear transformation and the nonlinear
+to represent these three motif-induced hypergraphs, respectively,
+where each column of these matrices denotes a hyperedge. For activation function (e.g. leaky ReLU). By replacing 𝑯𝑐 with any of
+example, in Fig. 3, {𝑢 , 𝑢 , 𝑢 } is an instance of M , and we use 𝑒 𝑯 𝑠 , 𝑯 𝑗 and 𝑯 𝑝 , we can borrow the strengths of hypergraph convo-
+1 2 3 4 1 lutional networks to learn user representations encoded high-order
+to denote this hyperedge. Then, according to definition 1, we have
+𝐻 𝑢 𝑠 1 ,𝑒 1 = 𝐻 𝑢 𝑠 2 ,𝑒 1 = 𝐻 𝑢 𝑠 3 ,𝑒 1 = 1. i n n a f l o m rm a a tr t i i c o e n s i w n h th ic e h c o o n rr l e y s r p e o - n sc d a in le g e c m ha b n e n d e d l i . n A gs s , 𝑫 w 𝑐 e a s n k d ip 𝑳 t 𝑐 h a e r m e d in ia t g h o e -
+3.2.2 Multi-Channel Hypergraph Convolution. In this paper, we following discussion. The hypergraph convolution can be viewed
+use a three-channel setting, including ‘Social Channel (s)’, ‘Joint as a two-stage refinement performing ‘node-hyperedge-node’ fea-
+Channel (j)’, and ‘Purchase Channel (p)’, in response to the three ture transformation upon hypergraph structure. The multiplication
+types of triangular motifs, but the number of channels can be ad- operation 𝑯𝑐 ⊤𝑷𝑐 (𝑙) defines the message passing from nodes to hy-
+justed to adapt to more sophisticated situations. Each channel is peredges and then premultiplying 𝑯𝑐 is viewed to aggregate infor-
+responsible for encoding one type of high-order user relation pat- mation from hyperedges to nodes. However, despite the benefits of
+tern. As different patterns may show different importances to the hypergraph convolution, there are a huge number of motif-induced
+final recommendation performance, directly feeding the full base hyperedges (e.g. there are 19,385 social triangles in the used dataset,
+user embeddings 𝑷 (0) to all the channels is unwise. To control LastFM), which would cause a high cost to build the incidence ma-
+the information flow from the base user embeddings 𝑷 (0) to each trix 𝑯𝑐 . But as we only exploit triangular motifs, we show that this
+channel, we design a pre-filter with self-gating units (SGUs), which problem can be solved in a flexible and efficient way by leveraging
+is defined as: the associative property of matrix multiplication.
+Following [60], we let 𝑩 = 𝑺 ⊙ 𝑺 𝑇 and 𝑼 = 𝑺 − 𝑩 be the adjacency
+𝑷𝑐 (0) = 𝑓
+g
+𝑐
+ate
+(𝑷 (0) ) = 𝑷 (0) ⊙ 𝜎 (𝑷 (0) 𝑾𝑔 𝑐 + 𝒃𝑔 𝑐 ), (1) matrices of the bidirectional and unidirectional social networks
+where 𝑾𝑔 𝑐 ∈ R𝑑×𝑑, 𝒃𝑔 𝑐 ∈ R𝑑 are parameters to be learned, 𝑐 ∈ r m es a p tr e i c x ti a v n e d ly. ( W 𝑨𝑀 e
+𝑘
+u ) s 𝑖 e ,𝑗 𝑨 = 𝑀 1 𝑘 m to e r a e n p s re t s h e a n t t v t e h r e te m x o 𝑖 ti a f n -i d nd v u e c r e te d x ad 𝑗 j a a p ce p n e c a y r
+{𝑠, 𝑗, 𝑝} represents the channel, ⊙ denotes the element-wise prod- in one instance of M𝑘 . As two vertices can appear in multiple
+uct and 𝜎 is the sigmoid nonlinearity. The self-gating mechanism instances of M𝑘 , (𝑨𝑀𝑘 )𝑖,𝑗 is computed by:
+effectively serves as a multiplicative skip-connection [8] that learns
+a nonlinear gate to modulate the base user embeddings at a feature- (𝑨𝑀𝑘 )𝑖,𝑗 = #(𝑖, 𝑗 occur in the same instance of M𝑘 ). (3)
+w th i e se ch g a ra n n n u e l l a -s r p it e y ci t fi h c ro u u s g e h r e d m im b e e n d s d i i o n n gs re 𝑷 - 𝑐 w (0 e ) i . ghting, then we obtain T ca a t b i l o e n 1 . A sh s o a w ll s t h h o e w in t v o o c lv a e lc d u m lat a e tr 𝑨 ic 𝑀 es 𝑘 i i n n T th ab e l f e o 1 rm ar o e f s m pa a r tr s i e x m m a u t l r t i i c p e l s i- ,
+Referring to the spectral hypergraph convolution proposed in 𝑨𝑀𝑘 can be efficiently calculated. Specifically, the basic unit in Table
+[10], we define our hypergraph convolution as: 1 is in a general form of 𝑿𝒀 ⊙ 𝒁, which means 𝑨𝑀 to 𝑨𝑀 may be
+1 9
+sparser than 𝒁 (i.e. 𝑩 or 𝑼 ) or as sparse as 𝒁. 𝑨𝑀 could be a little
+𝑷𝑐 (𝑙+1) = 𝑫𝑐 −1𝑯𝑐 𝑳𝑐 −1𝑯𝑐 ⊤ 𝑷𝑐 (𝑙) . (2) denser, but we can filter out the popular items (we 10 think consuming
+
+
+===== Page 5 =====
+Self-Supervised Multi-Channel Hypergraph Convolutional Network for Social Recommendation WWW ’21, April 19–23, 2021, Ljubljana, Slovenia
+Self-Gating Channel 1 HGraph Conv - Social Self-Gating SS Learning - Social
+u3 s u4 G s Self-Gating Chan G G n j s el 2 HGraph Conv - Joint n oit nett A User E s m u b m edding Self-Gating SS M M L I I e ( ( a u u r 2 2 n , , i s s n s j, , g G G - j s ) J ) oint
+s Channel 3
+i1 u1 s j u6 u2 s p u5 i2 User Embedding S S e e l l f f - - G G a a t t i i n n g g Gp HGraph Conv - Purchase Self-Gating Auxiliar S y S T L a M e s a k I r ： ( n u i H n 2, g i e s p - r , a P G r u c p r h ) c i h ca a l s M e IM
+G
+j G p Graph Conv User Embedding
+dot Item Ranking
+Item Embedding
+Item Embedding Primary Task：Recommendation
+Figure 3: An overview of the proposed model (1-layer). Each triangle in the left graph is a hyperedge and also an instance of
+defined motifs. 𝐺 𝑠 , 𝐺 𝑗 and 𝐺 𝑝 denote the three motif-induced hypergraphs constructed based on social, joint, and purchase
+motifs, respectively. 𝑠 𝑠 , 𝑠 𝑗 , and 𝑠 𝑝 in the three dotted ellipses denote three ego-networks with 𝑢 2 as the center, which are
+subgraphs of 𝐺 𝑠 , 𝐺 𝑗 and 𝐺 𝑝 , respectively.
+popular items might not reflect the users’ personalized preferences) where 𝒂 ∈ R𝑑 and 𝑾𝑎𝑡𝑡 ∈ R𝑑×𝑑 are trainable parameters, and the
+when calculating 𝑨𝑀 10 and remove the entries less than a threshold comprehensive user representation 𝒑∗ = (cid:205) 𝑐 ∈{𝑠,𝑗,𝑝 } 𝛼 𝑐𝒑𝑐 ∗,.
+(e.g. 5) in 𝑨𝑀 to keep efficient calculation. For symmetric motifs, Note that, since the explicit social relations are noisy and isolated
+𝑨𝑀 = 𝑪, and 10 for the asymmetric ones 𝑨𝑀 = 𝑪 + 𝑪 𝑇 . Obviously, relations are not a strong signal of close friendship [55, 56], we dis-
+without considering self-connection, the summation of 𝑨𝑀 to 𝑨𝑀 card those relations which are not part of any instance of defined
+is equal to 𝑯 𝑠 𝑯 𝑠⊤, as each entry of 𝑯 𝑠 𝑯 𝑠⊤ ∈ R𝑚×𝑚 also i 1 ndicate 7 s motifs. So, we do not have a convolution operation directly working
+how many social triangles contain the node pair represented by the on the explicit social network 𝑺. Besides, in our setting, the hyper-
+row and column index of the entry. Analogously, the summation of graph convolution cannot directly aggregate information from the
+𝑨𝑀 to 𝑨𝑀 is equal to 𝑯 𝑗 𝑯 𝑗⊤ without self-connection and 𝑨𝑀 items (we do not incorporate the items into 𝑨𝑗 and 𝑨𝑝 ). To tackle
+is eq 8 ual to 𝑯 9 𝑝 𝑯 𝑝⊤. Taking the calculation of 𝑨𝑀 as an examp 1 le 0 , this problem, we additionally perform simple graph convolution on
+it is evident that 𝑼 𝑼 constructs a unidirectional p 1 ath connecting the user-item interaction graph to encode the purchase information
+three vertices, and the operation ⊙𝑼 makes the path into a loop, and complement the multi-channel hypergraph convolution. The
+which is an instance of 𝑨𝑀 . As 𝑨𝑀 also contains the triangles in simple graph convolution is defined as:
+1 10
+w 𝑨 re e 𝑀 pl u 8 a s c a e e n 𝑨 𝑯 d 𝑠 𝑨 𝑠 = 𝑯 𝑀 𝑠 (cid:205) 9 ⊤ . 𝑘 7 , S = 𝑯 o 1 , 𝑗 𝑨 w 𝑯 𝑀 e 𝑗 𝑘 ⊤ r , e , 𝑨 m an o 𝑗 d v = e 𝑯 𝑨 th 𝑝 𝑀 e 𝑯 8 r 𝑝 + e ⊤ d 𝑨 u i 𝑀 n nd 9 E a , q n a . n c ( y d 2) f 𝑨 , r r o 𝑝 e m s = p 𝑨 e 𝑨 c 𝑀 t 𝑀 i 1 v 1 0 e 0 . ly − F . i 𝑨 T na h 𝑗 l e l t y n o , 𝑸 𝑷𝑟 ( ( 𝑙 𝑙 + + 1 1 ) ) = = 𝑫 𝑫 𝑢 − 𝑖 − 1 1 𝑹 𝑹 𝑸 ⊤ 𝑷 (𝑙 𝑚 ) (𝑙 , ), 𝑷𝑟 𝑷 (0 𝑚 ( ) 𝑙) = = 𝑓 g 𝑟 at ∑︁ e (𝑷 (0 𝛼 ) ) 𝑐 , 𝒑𝑐 (𝑙) + 1 𝑷𝑟 (𝑙), (6)
+we have a transformed hypergraph convolution, defined as: 𝑐 ∈{𝑠,𝑗,𝑝 } 2
+𝑷𝑐 (𝑙+1) = 𝑫^ 𝑐 −1𝑨𝑐 𝑷𝑐 (𝑙), (4) where 𝑷𝑟 (𝑙) is the gated user embeddings for simple graph convolu-
+where 𝑫^ 𝑐 ∈ R𝑚×𝑚 is the degree matrix of 𝑨𝑐 . Obviously, Eq (4) tion, 𝑷𝑚 (𝑙) is the combination of the comprehensive user embeddings
+is equivalent to Eq (2), and can be a simplified substitution of the and 𝑷𝑟 (𝑙) , and 𝑫𝑢 ∈ R𝑚×𝑚 and 𝑫𝑖 ∈ R𝑛×𝑛 are degree matrices of
+hypergraph convolution. Since we follow the design of LightGCN 𝑹 and 𝑹⊤, respectively. Finally, we obtain the final user and item
+which has subsumed the effect of self-connection, and thus skipping embeddings 𝑷 and 𝑸 defined as:
+self-connection in adjacency matrix does not matter too much. In
+𝐿 𝐿
+t
+c
+h
+o
+i
+m
+s w
+pu
+a
+t
+y
+a
+,
+t
+w
+io
+e
+n
+c
+,
+i
+a
+r
+n
+cu
+d
+m
+g
+v
+re
+e
+a
+n
+t
+t
+ly
+th
+r
+e
+ed
+in
+u
+d
+c
+i
+e
+vi
+t
+d
+h
+u
+e
+a
+c
+l
+o
+h
+m
+yp
+p
+e
+u
+r
+t
+e
+a
+d
+ti
+g
+o
+e
+n
+c
+a
+o
+l
+n
+c
+s
+o
+t
+s
+r
+t
+u
+.
+ction and 𝑷 = 𝑷 ∗ +
+𝐿 +
+1
+1
+∑︁ 𝑷𝑟 (𝑙), 𝑸 =
+𝐿 +
+1
+1
+∑︁ 𝑸 (𝑙), (7)
+𝑙=0 𝑙=0
+3.2.3 Learning Comprehensive User Representations. After propa- where 𝑷 (0) and 𝑸 (0) are randomly initialized.
+gating the user embeddings through 𝐿 layers, we average the embed-
+dings obtained at each layer to form the final channel-specific user 3.2.4 Model Optimization. To learn the parameters of MHCN, we
+employ the Bayesian Personalized Ranking (BPR) loss [30], which
+representation: 𝑷𝑐 ∗ = 𝐿 1 +1 (cid:205) 𝑙 𝐿 =0 𝑷𝑐 (𝑙) to avoid the over-smoothing is a pairwise loss that promotes an observed entry to be ranked
+problem [14]. Then we use the attention mechanism [36] to selec-
+higher than its unobserved counterparts:
+tively aggregate information from different channel-specific user
+embeddings to form the comprehensive user embeddings. For each L𝑟 = ∑︁ − log 𝜎 (cid:0)𝑟^𝑢,𝑖 (Φ) − 𝑟^𝑢,𝑗 (Φ)(cid:1) + 𝜆∥Φ∥2, (8)
+2
+user 𝑢, a triplet (𝛼𝑠, 𝛼 𝑗, 𝛼𝑝 ) is learned to measure the different 𝑖 ∈I(𝑢),𝑗∉I(𝑢)
+contributions of the three channel-specific embeddings to the fi- where Φ denotes the parameters of MHCN, 𝑟^𝑢,𝑖 = 𝒑𝑢 ⊤𝒒𝑖 is the
+nal recommendation performance. The attention function 𝑓 att is predicted score of 𝑢 on 𝑖, and 𝜎 (·) here is the sigmoid function.
+defined as: Each time a triplet including the current user 𝑢, the positive item 𝑖
+𝛼 𝑐 = 𝑓 att (𝑝 𝑐 ∗) = (cid:205) 𝑐′∈{𝑠 e , x 𝑗, p 𝑝 } (𝒂 e ⊤ xp · ( 𝑾 𝒂 𝑎 ⊤ 𝑡𝑡 · 𝒑 𝑾 𝑐 ∗ 𝑎 ) 𝑡𝑡 𝒑 𝑐 ∗ ′ ) , (5) p is u d rc is h l a ik s e ed d b b y y 𝑢 𝑢 , o a r nd un th k e no ra w n n do t m o 𝑢 ly , s is am fe p d le t d o n M e H ga C ti N ve . T it h e e m m 𝑗 o w d h e i l c i h s
+
+
+===== Page 6 =====
+WWW ’21, April 19–23, 2021, Ljubljana, Slovenia Yu and Yin, et al.
+Our intuition of the self-supervised task is that the comprehensive
+User Embeddings User Embeddings user representation should reflect the user node’s local and global
+in Sub-HG in HG
+𝒛𝑢 high-order connectivity patterns in different hypergraphs, and this
+User Embedding goal can be achieved by hierarchically maximizing the mutual in-
+𝒑𝑢 Readout 1 hu formation between representations of the user, the user-centered
+sub-hypergraph, and the hypergraph in each channel. The mutual
+𝒛෤𝑢 Readout 2 information measures the structural informativeness of the sub-
+Corrupted User and the whole hypergraph towards inferring the user preference
+Embeddings in Sub-HG
+through the reduction in local and global structure uncertainty.
+f D (𝒑𝑢, 𝒛𝑢) > f D (𝒑𝑢, 𝒛෤ 𝑢 ) f D (𝒛𝑢, 𝒉𝑢) > f D (𝒛෤ 𝑢 , 𝒉𝑢) To get the sub-hypergraph representation, instead of averaging
+the embeddings of the users in the sub-hypergraph, we design
+Figure 4: Hierarchical mutual information maximization on a readout function 𝑓 out1 : R𝑘×𝑑 → R𝑑 , which is permutation-
+invariant and formulated as:
+hypergraphs.
+𝑐
+optimized towards ranking 𝑖 higher than 𝑗 in the recommendation 𝒛𝑢 𝑐 = 𝑓 𝑜𝑢𝑡 1 (𝑷𝑐 , 𝒂𝑢 𝑐 ) = 𝑠𝑢 𝑷 𝑚 𝑐 ( 𝒂 𝒂 𝑢 𝑢 𝑐 ) , (9)
+list for 𝑢. In addition, 𝐿 regularization with the hyper-parameter
+2 where 𝑷𝑐 = 𝑓 𝑐 (𝑷) is to control the participated magnitude of 𝑷 to
+𝜆 is imposed to reduce generalized errors. gate
+avoid overfitting and mitigate gradient conflict between the primary
+and auxiliary tasks, 𝒂𝑢 𝑐 is the row vector of 𝑨𝑐 corresponding to the
+3.3 Enhancing MHCN with Self-Supervised center user 𝑢, and 𝑠𝑢𝑚(𝒂𝑢 𝑐 ) denotes how many connections in the
+Learning sub-hypergraph. In this way, the weight (importance) of each user
+Owing to the exploitation of high-order relations, MHCN shows in the sub-hypergraph is considered to form the sub-hypergraph
+great performance (reported in Table 3 and 4). However, a shortcom- embedding 𝒛𝑢 . Analogously, we define the other readout function
+ing of MHCN is that the aggregation operations (Eq. 5 and 6) might 𝑓 out2 : R𝑚×𝑑 → R𝑑 , which is actually an average pooling to
+lead to a loss of high-order information, as different channels would summarize the obtained sub-hypergraph embeddings into a graph-
+learn embeddings with varying distributions on different hyper- level representation:
+graphs [54]. Concatenating the embeddings from different channels
+could be the alternative, but it uniformly weighs the contributions 𝒉 𝑐 = 𝑓 𝑜𝑢𝑡 2 (𝒁𝑐 ) = AveragePooling(𝒁𝑐 ). (10)
+of different types of high-order information in recommendation We tried to use InfoNCE [27] as our learning objective to max-
+generation, which is not in line with the reality and leads to inferior imize the hierarchical mutual information. But we find that the
+performance in our trials. To address this issue and fully inherit pairwise ranking loss, which has also been proved to be effective in
+the rich information in the hypergraphs, we innovatively integrate mutual information estimation [18], is more compatible with the
+self-supervised learning into the training of MHCN. recommendation task. We then define the objective function of the
+In the scenarios of representation learning, self-supervised task self-supervised task as follows:
+usually either serves as a pretraining strategy or an auxiliary task to
+improve the primary task [17]. In this paper, we follow the primary L𝑠 = − ∑︁ (cid:110) ∑︁ log 𝜎 (𝑓 𝐷 (𝒑𝑢 𝑐 , 𝒛𝑢 𝑐 ) − 𝑓 𝐷 (𝒑𝑢 𝑐 , ˜𝒛𝑢 𝑐 ))
+& auxiliary paradigm, and set up a self-supervised auxiliary task to 𝑐 ∈{𝑠,𝑗,𝑝 } 𝑢 ∈𝑈 (11)
+e D n e h ep an G c r e a t p h h e I r n e f c o o m m a m x e ( n D d G a I t ) io [ n 37 t ] as is k a (p g r e im ne a r r a y l t a a n s d k) p . o T p h u e la re r c a e p n p t r w oa o c r h k + ∑︁ log 𝜎 (𝑓 𝐷 (𝒛𝑢 𝑐 , 𝒉 𝑐 ) − 𝑓 𝐷 (˜𝒛𝑢 𝑐 , 𝒉 𝑐 )) (cid:111) .
+𝑢 ∈𝑈
+for learning node representations within graph-structured data in a
+self-supervised manner. It relies on maximizing mutual information 𝑓 𝐷 (·) : R𝑑 × R𝑑 ↦−→ R is the discriminator function that takes two
+(MI) between node representations and corresponding high-level vectors as the input and then scores the agreement between them.
+summaries of graphs. However, we consider that the graph-node MI We simply implement the discriminator as the dot product between
+maximization stays at a coarse level and there is no guarantee that two representations. Since there is a bijective mapping between
+the encoder in DGI can distill sufficient information from the input 𝑷𝑐 and 𝒁𝑐 , they can be the ground truth of each other. We corrupt
+data. Therefore, with the increase of the graph scale, the benefits 𝒁𝒄 by both row-wise and column-wise shuffling to create negative
+brought by MI maximization might diminish. For a better learning examples 𝒁˜
+𝑐
+. We consider that, the user should have a stronger
+method which fits our scenario more, we inherit the merits of DGI to connection with the sub-hypergraph centered with her (local struc-
+consider mutual information and further extend the graph-node MI ture), so we directly maximize the mutual information between
+maximization to a fine-grained level by exploiting the hierarchical their representations. By contrast, the user would not care all the
+structure in hypergraphs. other users too much (global structure), so we indirectly maximize
+Recall that, for each channel of MHCN, we build the adjacency the mutual information between the representations of the user
+matrix 𝑨𝑐 to capture the high-order connectivity information. Each and the complete hypergraph by regarding the sub-hypergraph
+row in 𝑨𝑐 represents a subgraph of the corresponding hypergraph as the mediator. Compared with DGI which only maximizes the
+centering around the user denoted by the row index. Then we can mutual information between node and graph representations, our
+induce a hierarchy: ‘user node ← user-centered sub-hypergraph ← hierarchical design can preserve more structural information of the
+hypergraph’ and create self-supervision signals from this structure. hypergraph into the user representations (comparison is shown in
+
+
+===== Page 7 =====
+Self-Supervised Multi-Channel Hypergraph Convolutional Network for Social Recommendation WWW ’21, April 19–23, 2021, Ljubljana, Slovenia
+Section 4.3). Figure 4 illustrates the hierarchical mutual information the datasets is shown in Table 2. We perform 5-fold cross-validation
+maximization. on the three datasets and report the average results.
+Finally, we unify the objectives of the recommendation task (pri- Baselines. We compare MHCN with a set of strong and commonly-
+mary) and the task of maximizing hierarchical mutual information used baselines including MF-based and GNN-based models:
+(auxiliary) for joint learning. The overall objective is defined as:
+• BPR [30] is a popular recommendation model based on Bayesian
+L = L𝑟 + 𝛽L𝑠 , (12) personalized ranking. It models the order of candidate items by
+a pairwise ranking loss.
+where 𝛽 is a hyper-parameter used to control the effect of the auxil-
+• SBPR [61] is a MF based social recommendation model which ex-
+iary task and L𝑠 can be seen as a regularizer leveraging hierarchical tends BPR and leverages social connections to model the relative
+structural information of the hypergraphs to enrich the user repre-
+order of candidate items.
+sentations in the recommendation task for a better performance.
+• LightGCN [14] is an efficient GCN-based general recommenda-
+tion model that leverages the user-item proximity to learn node
+3.4 Complexity Analysis
+representations and generate recommendations.
+In this section, we discuss the complexity of our model. • GraphRec [9] is the first GNN-based social recommendation
+Model size. The trainable parameters of our model consist of model that models both user-item and user-user interactions.
+three parts: user and item embeddings, gate parameters, and at- • DiffNet++ [40] is the latest GCN-based social recommendation
+tention parameters. For the first term, we only need to learn the method that models the recursive dynamic social diffusion in
+0 𝑡ℎ layer user embeddings 𝑷 (0) ∈ R𝑚×𝑑 and item embeddings both the user and item spaces.
+𝑸 (0) ∈ R𝑛×𝑑 . As for the second term, we employ seven gates, four • DHCF [16] is a recent hypergraph convolutional network-based
+for MHCN and three for the self-supervised task. Each of the gate method that models the high-order correlations among users and
+has parameters of size (𝑑 + 1) × 𝑑, while the attention parame- items for general recommendation.
+ters are of the same size. To sum up, the model size approximates
+Two versions of the proposed multi-channel hypergraph convolu-
+(𝑚 + 𝑛 + 8𝑑)𝑑 in total. As min(𝑚, 𝑛) ≫ 𝑑, our model is fairly light. tional network are investigated in the experiments. MHCN denotes
+Time complexity. The computational cost mainly derives from the vanilla version and 𝑺2-MHCN denotes the self-supervised ver-
+four parts: hypergraph/graph convolution, attention, self-gating,
+sion.
+and mutual information maximization. For the multi-channel hyper-
+Metrics. To evaluate the performance of all methods, two relevancy-
+graph convolution through 𝐿 layers, the propagation consumption
+based metrics Precision@10 and Recall@10 and one ranking-based
+is less than O(|𝑨+|𝑑𝐿), where |𝑨+| denotes the number of nonzero
+metric NDCG@10 are used. We perform item ranking on all the
+elements in 𝑨, and here |𝑨+| = max(|𝑨𝑠 +|, |𝑨+ 𝑗 |, |𝑨+ 𝑝 |). Analogously, candidate items instead of the sampled item sets to calculate the
+the time complexity of the graph convolution is O(|𝑹+|𝑑𝐿). As values of these three metrics, which guarantees that the evaluation
+for the attention and self gating mechanism, they both contribute process is unbiased.
+O(𝑚𝑑2) time complexity. The cost of mutual information maxi- Settings. For a fair comparison, we refer to the best parameter
+mization is mainly from 𝑓 𝑜𝑢𝑡 , which is O(|𝑨+|𝑑). Since we follow settings reported in the original papers of the baselines and then
+1
+the setting in [14] to remove the learnable matrix for linear transfor- use grid search to fine tune all the hyperparameters of the baselines
+mation and the nonlinear activation function, the time complexity to ensure the best performance of them. For the general settings
+of our model is much lower than that of previous GNNs-based of all the models, the dimension of latent factors (embeddings) is
+social recommendation models. empirically set to 50, the regularization coefficient 𝜆 = 0.001, and
+the batch size is set to 2000. We use Adam to optimize all these
+Table 2: Dataset Statistics models. Section 4.4 reports the influence of different parameters (i.e.
+𝛽 and the depth) of MHCN, and we use the best parameter settings
+Dataset #User #Item #Feedback #Relation Density in Section 4.2, and 4.3.
+LastFM 1,892 17,632 92,834 25,434 0.28%
+Douban 2,848 39,586 894,887 35,770 0.79% 4.2 Recommendation Performance
+Yelp 19,539 21,266 450,884 864,157 0.11% In this part, we validate if MHCN outperforms existing social rec-
+ommendation baselines. Since the primary goal of social recommen-
+dation is to mitigate data sparsity issue and improve the recommen-
+dation performance for cold-start users. Therefore, we respectively
+4 EXPERIMENTS AND RESULTS conduct experiments on the complete test set and the cold-start
+4.1 Experimental Settings test set in which only the cold-start users with less than 20 interac-
+tions are contained. The experimental results are shown in Table
+Datasets. Three real-world datasets: LastFM1, Douban2, and Yelp
+3 and Table 4. The improvement is calculated by subtracting the
+[49] are used in our experiments. As our aim is to generate Top-K
+best performance value of the baselines from that of 𝑆2-MHCN
+recommendation, for Douban which is based on explicit ratings, we
+and then using the difference to divide the former. Analogously,
+leave out ratings less than 4 and assign 1 to the rest. The statistics of
+𝑆2-improvement is calculated by comparing the values of the per-
+1http://files.grouplens.org/datasets/hetrec2011/
+formance of MHCN and and 𝑺2-MHCN. According to the results,
+2https://pan.baidu.com/s/1hrJP6rq we can draw the following conclusions:
+
+
+===== Page 8 =====
+WWW ’21, April 19–23, 2021, Ljubljana, Slovenia Yu and Yin, et al.
+Table 3: General recommendation performance comparison.
+Dataset Metric GraphRec BPR SBPR DiffNet++ DHCF LightGCN MHCN 𝑺2-MHCN Improv. 𝑺2-Improv.
+P@10 17.385% 16.556% 16.893% 18.485% 16.877% 19.205% 19.625% 20.052% 4.410% 2.175%
+LastFM R@10 18.020% 16.803% 17.245% 18.737% 17.131% 19.480% 19.945% 20.375% 4.594% 2.155%
+N@10 0.21173 0.19943 0.20516 0.22310 0.20744 0.23392 0.23834 0.24395 4.287% 2.156%
+P@10 17.021% 15.673% 15.993% 17.532% 16.871% 17.780% 18.283% 18.506% 4.083% 1.220%
+Douban R@10 5.916% 5.160% 5.322% 6.205% 5.755% 6.247% 6.556% 6.681% 6.947% 1.906%
+N@10 0.19051 0.17476 0.17821 0.19701 0.18655 0.19881 0.20694 0.21038 5.819% 1.662%
+P@10 2.323% 2.002% 2.192% 2.480% 2.298% 2.586% 2.751% 3.003% 16.125% 9.160%
+Yelp R@10 6.075% 5.173% 5.468% 6.354% 5.986% 6.525% 6.862% 7.885% 17.247% 14.908%
+N@10 0.04653 0.03840 0.04314 0.04833 0.04700 0.04998 0.05356 0.06061 21.268% 13.162%
+Table 4: Cold-start recommendation performance comparison.
+Dataset Metric GraphRec BPR SBPR DiffNet++ DHCF LightGCN MHCN 𝑺2-MHCN Improv. 𝑺2-Improv.
+P@10 4.662% 3.784% 4.573% 5.102% 3.974% 4.809% 5.466% 5.759% 12.877% 5.360%
+LastFM R@10 18.033% 15.240% 18.417% 21.365% 16.395% 20.361% 23.354% 24.431% 14.350% 4.611%
+N@10 0.14675 0.12460 0.15141 0.16031 0.14285 0.15044 0.17218 0.19138 19.381% 11.151%
+P@10 2.007% 1.722% 1.935% 2.230% 1.921% 2.134% 2.343% 2.393% 7.309% 2.133%
+Douban R@10 8.215% 7.178% 8.084% 8.705% 7.977% 8.317% 9.646% 10.632% 22.136% 10.227%
+N@10 0.05887 0.04784 0.05716 0.06767 0.05533 0.06037 0.06771 0.07113 5.113% 5.052%
+P@10 1.355% 1.232% 1.286% 1.475% 1.314% 1.504% 1.545% 1.747% 14.108% 13.074%
+Yelp R@10 5.901% 5.468% 5.720% 6.635% 5.876% 6.753% 6.838% 7.881% 12.264% 15.253%
+N@10 0.03896 0.03448 0.03671 0.04237 0.03826 0.04273 0.04354 0.05143 15.703% 18.121%
+• MHCN shows great performance in both the general and cold- fail to outperform LightGCN, though the social information is
+start recommendation tasks. Even without self-supervised learn- incorporated.
+ing, it beats all the baselines by a fair margin. Meanwhile, self- • Although DHCF is also based on hypergraph convolution, it does
+supervised learning has great ability to further improve MHCN. not show any competence in all the cases. We are unable to repro-
+Compared with the vanilla version, the self-supervised version duce its superiority reported in the original paper [16]. There are
+shows decent improvements in all the cases. Particularly, in the two possible causes which might lead to its failure. Firstly, it only
+cold-start recommendation task, self-supervised learning brings exploits the user-item high-order relations. Secondly, the way to
+significant gains. On average, 𝑺2-MHCN achieves about 5.389% construct hyperedges is very impractical in this model, which
+improvement in the general recommendation task and 9.442% leads to a very dense incidence matrix. The model would then
+improvement in the cold-start recommendation task compared encounter the over-smoothing problem and suffer from heavy
+with MHCN. Besides, it seems that, the sparser the dataset, the computation.
+more improvements self-supervised learning brings.
+• GNN-based recommendation models significantly outperform
+4.3 Ablation Study
+the MF-based recommendation models. Even the general rec-
+ommendation models based on GNNs show much better perfor- In this section, we conduct an ablation study to investigate the
+mance than MF-based social recommendation models. However, interplay of the components in 𝑆2-MHCN and validate if each
+when compared with the counterparts based on the same building component positively contributes to the final recommendation
+block (i.e. MF-based vs. MF-based, GNNs-based vs. GNNs-based), performance.
+social recommendation models are still competitive and by and
+large outperform the corresponding general recommendation 4.3.1 Investigation of Multi-Channel Setting. We first investigate
+the multi-channel setting by removing any of the three channels
+models except LightGCN.
+from 𝑆2-MHCN and leaving the other two to observe the changes
+• LightGCN is a very strong baseline. Without considering the two
+variants of MHCN, LightGCN shows the best or the second best
+of performance. Each bar in the plots (except complete) represents
+performance in most cases. This can be owed to the removal the case that the corresponding channel is removed, while complete
+means no module has been removed. From Fig. 5, we can observe
+of the redundant operations including the nonlinear activation
+that removing any channel would cause performance degradation.
+function and transformation matrices. The other baselines such
+as GraphRec might be limited by these useless operations, and But it is obvious that purchase channel contributes the most to the
+final performance. Without this channel, 𝑆2-MHCN falls to the
+
+
+===== Page 9 =====
+Self-Supervised Multi-Channel Hypergraph Convolutional Network for Social Recommendation WWW ’21, April 19–23, 2021, Ljubljana, Slovenia
+24
+22
+20
+18
+16
+Prec@10 Rec@10 NDCG@10
+%
+ecnamrofreP
+Social Joint Purchase Complete
+LastFM Douban Yelp
+22 8
+20 24
+7
+18
+22
+16 6
+14
+5 20
+12
+4
+10 18
+8 3
+16
+6
+2
+Prec@10 Rec@10 NDCG@10 Prec@10 Rec@10 NDCG@10 Prec@10 Rec@10 NDCG@10
+Figure 5: Contributions of each channel on different
+datasets.
+LastFM Douban Yelp
+1.0 1.0 1.0
+0.8 0.8 0.8
+0.6 0.6 0.6
+0.4 0.4 0.4
+0.2 0.2 0.2
+0.0 0.0 0.0
+Social Joint Purchase Social Joint Purchase Social Joint Purchase
+Figure 6: The distributions of the attention weights on dif-
+ferent datasets.
+level of LightGCN shown in Table 3. By contrast, removing Social
+channel or Joint channel would not have such a large impact on the
+final performance. Comparing Social channel with Joint channel, we
+can observe that the former contributes slightly more on LastFM
+and Yelp, while the latter, in terms of the performance contribution,
+is more important on Douban.
+To further investigate the contribution of each channel when
+they are all employed, we visualize the attention scores learned
+along with other model parameters, and draw a box plot to display
+the distributions of the attention weights. According to Fig. 6, we
+can observe that, for the large majority of users in LastFM, Social
+channel has limited influence on the comprehensive user represen-
+tations. In line with the conclusions from Fig. 5, Purchase channel
+plays the most important role in shaping the comprehensive user
+representations. The importance of Joint channel falls between the
+other two. The possible reason could be that, social relations are
+usually noisy and the users who are only socially connected might
+not always share similar preferences.
+4.3.2 Investigation of Self-supervised Task. To investigate the ef-
+fectiveness of the hierarchical mutual information maximization
+(MIM), we break this procedure into two parts: local MIM between
+the user and user-centered sub-hypergraph, and global MIM be-
+tween the user-centered sub-hypergraph and hypergraph. We then
+run MHCN with either of these two to observe the performance
+changes. We also compare hierarchical MIM with the node-graph
+%
+ecnamrofreP
+Local Global DGI Hierarchical Disabled
+LastFM Douban Yelp
+22 8
+20
+7
+18
+16 6
+14
+5
+12
+4
+10
+8 3
+6
+2
+Prec@10 Rec@10 NDCG@10 Prec@10 Rec@10 NDCG@10
+Figure 7: Investigation of Hierarchical Mutual Information
+Maximization on different datasets.
+MIM used in DGI to validate the rationality of our design. We im-
+plement DGI by referring to the original paper [37]. The results
+are illustrated in Fig. 7, and we use Disabled to denote the vanilla
+MHCN. Unlike the bars in Fig. 6, each bar in Fig. 7 represents the
+case where only the corresponding module is used. As can be seen,
+hierarchical MIM shows the best performance while local MIM
+achieves the second best performance. By contrast, global MIM
+contributes less but it still shows better performance on Douban
+Yelp when compared with DGI. Actually, DGI almost rarely con-
+tributes on the latter two datasets and we can hardly find a proper
+parameter that can make it compatible with our task. On some
+metrics, training MHCN with DGI even lowers the performance.
+According to these results, we can draw a conclusion that the self-
+supervised task is effective and our intuition for hierarchical mutual
+information maximization is more reasonable compared with the
+node-graph MIM in DGI.
+4.4 Parameter Sensitivity Analysis
+In this section, we investigate the sensitivity of 𝛽 and 𝐿.
+As we adopt the primary & auxiliary paradigm, to avoid the neg-
+ative interference from the auxiliary task in gradient propagating,
+we can only choose small values for 𝛽. We search the proper value in
+a small interval and empirically set it from 0.001 to 0.5. We then start
+our attempts from 0.001, and proceed by gradually increasing the
+step size. Here we report the performance of 𝑆2-MHCN with eight
+representative 𝛽 values {0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.5}. As
+can be seen in Fig. 8, with the increase of the value of 𝛽, the per-
+formance of 𝑆2-MHCN on all the datasets rises. After reaching the
+peak when 𝛽 is 0.01 on all the datasets, it steadily declines. Ac-
+cording to Fig. 8, we can draw a conclusion that even a very small
+𝛽 can promote the recommendation task, while a larger 𝛽 would
+mislead it. The benefits brought by the self-supervised task could
+be easily neutralized and the recommendation task is sensitive to
+the magnitude of self-supervised task. So, choosing a small value is
+more likely to facilitate the primary task when there is little prior
+knowledge about the data distribution.
+Finally, we investigate the influence of 𝐿 to find the optimal depth
+for 𝑆2-MHCN. We stack hypergraph convolutional layers from 1-
+layer to 5-layer setting. According to Fig. 9, the best performance
+
+
+===== Page 10 =====
+WWW ’21, April 19–23, 2021, Ljubljana, Slovenia Yu and Yin, et al.
+on three public datasets verify the effectiveness of each component
+ 3 U H F L V L R Q  5 H F D O O  1 ' & *
+of MHCN, and also demonstrate its state-of-the-art performance.
+ / D V W ) 0  ' R X E D Q  < H O S
+                 
+                 
+            ACKNOWLEDGMENT
+     
+      This work was supported by ARC Discovery Project (Grant No.
+     
+            DP190101985 and DP170103954). Jundong Li is supported by Na-
+     
+     
+      tional Science Foundation (NSF) under grant No. 2006844.
+           
+                 
+                  REFERENCES
+                                                                                                        
+[1] Philip Bachman, R Devon Hjelm, and William Buchwalter. 2019. Learning rep-
+ E H W D  E H W D  E H W D resentations by maximizing mutual information across views. In Advances in
+Figure 8: Influence of the magnitude of hierarchical MIM. Neural Information Processing Systems. 15535–15545.
+[2] Song Bai, Feihu Zhang, and Philip HS Torr. 2019. Hypergraph convolution and
+hypergraph attention. arXiv preprint arXiv:1901.08150 (2019).
+[3] Austin R Benson, David F Gleich, and Jure Leskovec. 2016. Higher-order organi-
+zation of complex networks. Science 353, 6295 (2016), 163–166.
+ 3 U H F L V L R Q  5 H F D O O  1 ' & *
+[4] Alain Bretto. 2013. Hypergraph theory. An introduction. Mathematical Engineer-
+ / D V W ) 0        ' R X E D Q        < H O S ing. Cham: Springer (2013).
+            [5] Jiajun Bu, Shulong Tan, Chun Chen, Can Wang, Hao Wu, Lijun Zhang, and
+      Xiaofei He. 2010. Music recommendation by unified hypergraph: combining
+     
+                  social media information and music content. In Proceedings of the 18th ACM
+      international conference on Multimedia. 391–400.
+            [6] Lei Chen, Le Wu, Richang Hong, Kun Zhang, and Meng Wang. 2020. Revisiting
+     
+Graph Based Collaborative Filtering: A Linear Residual Graph Convolutional
+                  Network Approach. In Proceedings of the AAAI Conference on Artificial Intelligence,
+            Vol. 34. 27–34.
+            [7] Robert B Cialdini and Noah J Goldstein. 2004. Social influence: Compliance and
+                                          conformity. Annu. Rev. Psychol. 55 (2004), 591–621.
+ / D \ H U  / D \ H U  / D \ H U [8] Yann N Dauphin, Angela Fan, Michael Auli, and David Grangier. 2017. Language
+modeling with gated convolutional networks. In International conference on
+Figure 9: Influence of the depth of MHCN. machine learning. 933–941.
+[9] Wenqi Fan, Yao Ma, Qing Li, Yuan He, Eric Zhao, Jiliang Tang, and Dawei Yin.
+2019. Graph neural networks for social recommendation. In The World Wide Web
+Conference. 417–426.
+of 𝑆2-MHCN is achieved when the depth of 𝑆2-MHCN is 2. With [10] Yifan Feng, Haoxuan You, Zizhao Zhang, Rongrong Ji, and Yue Gao. 2019. Hy-
+the continuing increase of the number of layer, the performance pergraph neural networks. In Proceedings of the AAAI Conference on Artificial
+of 𝑆2-MHCN declines on all the datasets. Obviously, a shallow
+Intelligence, Vol. 33. 3558–3565.
+[11] Min Gao, Junwei Zhang, Junliang Yu, Jundong Li, Junhao Wen, and Qingyu
+structure fits 𝑆2-MHCN more. A possible reason is that 𝑆2-MHCN Xiong. 2020. Recommender Systems Based on Generative Adversarial Networks:
+aggregates high-order information from distant neighbors. As a A Problem-Driven Perspective. arXiv preprint arXiv:2003.02474 (2020).
+[12] Guibing Guo, Jie Zhang, and Neil Yorke-Smith. 2015. TrustSVD: collaborative
+result, it is more prone to encounter the over-smoothing problem
+filtering with both the explicit and implicit influence of user trust and of item
+with the increase of depth. This problem is also found in DHCF ratings. In Twenty-Ninth AAAI Conference on Artificial Intelligence. 123–129.
+[16], which is based on hypergraph modeling as well. Considering [13] Lei Guo, Hongzhi Yin, Qinyong Wang, Tong Chen, Alexander Zhou, and Nguyen
+Quoc Viet Hung. 2019. Streaming session-based recommendation. In Proceedings
+the over-smoothed representations could be a pervasive problem
+of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data
+in hypergraph convolutional network based models, we will work Mining. 1569–1577.
+[14] Xiangnan He, Kuan Deng, Xiang Wang, Yan Li, Yong-Dong Zhang, and Meng
+against it in the future.
+Wang. 2020. LightGCN: Simplifying and Powering Graph Convolution Net-
+work for Recommendation. In Proceedings of the 43rd International ACM SIGIR
+5 CONCLUSION conference on research and development in Information Retrieval. ACM, 639–648.
+[15] R Devon Hjelm, Alex Fedorov, Samuel Lavoie-Marchildon, Karan Grewal, Phil
+Recently, GNN-based recommendation models have achieved great Bachman, Adam Trischler, and Yoshua Bengio. 2018. Learning deep represen-
+success in social recommendation. However, these methods sim- tations by mutual information estimation and maximization. arXiv preprint
+arXiv:1808.06670 (2018).
+ply model the user relations in social recommender systems as [16] Shuyi Ji, Yifan Feng, Rongrong Ji, Xibin Zhao, Wanwan Tang, and Yue Gao. 2020.
+pairwise interactions, and neglect that real-world user interactions Dual Channel Hypergraph Collaborative Filtering. In Proceedings of the 26th
+ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
+can be high-order. Hypergraph provides a natural way to model 2020–2029.
+high-order user relations, and its potential for social recommenda- [17] Wei Jin, Tyler Derr, Haochen Liu, Yiqi Wang, Suhang Wang, Zitao Liu, and Jiliang
+tion has not been fully exploited. In this paper,we fuse hypergraph Tang. 2020. Self-supervised learning on graphs: Deep insights and new direction.
+arXiv preprint arXiv:2006.10141 (2020).
+modeling and graph neural networks and then propose a multi- [18] Mete Kemertas, Leila Pishdad, Konstantinos G Derpanis, and Afsaneh Fazly. 2020.
+channel hypergraph convolutional network (MHCN) which works RankMI: A Mutual Information Maximizing Ranking Loss. In Proceedings of the
+on multiple motif-induced hypergraphs to improve social recom- IEEE/CVF Conference on Computer Vision and Pattern Recognition. 14362–14371.
+[19] Siwei Liu, Iadh Ounis, Craig Macdonald, and Zaiqiao Meng. 2020. A Heteroge-
+mendation. To compensate for the aggregating loss in MHCN, we neous Graph Neural Model for Cold-Start Recommendation. In Proceedings of
+innovatively integrate self-supervised learning into the training of the 43rd International ACM SIGIR Conference on Research and Development in
+Information Retrieval. 2029–2032.
+MHCN. The self-supervised task serves as the auxiliary task to im- [20] Hao Ma, Irwin King, and Michael R Lyu. 2009. Learning to recommend with
+prove the recommendation task by maximizing hierarchical mutual social trust ensemble. In International ACM SIGIR Conference on Research and
+information between the user, user-centered sub-hypergraph, and Development in Information Retrieval. 203–210.
+[21] Hao Ma, Michael R. Lyu, and Irwin King. 2009. Learning to recommend with
+hypergraph representations. The extensive experiments conducted trust and distrust relationships. In ACM Conference on Recommender Systems.
+
+
+===== Page 11 =====
+Self-Supervised Multi-Channel Hypergraph Convolutional Network for Social Recommendation WWW ’21, April 19–23, 2021, Ljubljana, Slovenia
+189–196. [46] Bo Yang, Yu Lei, Jiming Liu, and Wenjie Li. 2017. Social collaborative filtering by
+[22] Hao Ma, Haixuan Yang, Michael R Lyu, and Irwin King. 2008. Sorec: social trust. IEEE transactions on pattern analysis and machine intelligence 39, 8 (2017),
+recommendation using probabilistic matrix factorization. In Proceedings of the 1633–1647.
+17th ACM conference on Information and knowledge management. ACM, 931–940. [47] Dingqi Yang, Bingqing Qu, Jie Yang, and Philippe Cudre-Mauroux. 2019. Revis-
+[23] Hao Ma, Dengyong Zhou, Chao Liu, Michael R Lyu, and Irwin King. 2011. Rec- iting user mobility and social relationships in lbsns: a hypergraph embedding
+ommender systems with social regularization. In Proceedings of the fourth ACM approach. In The World Wide Web Conference. 2147–2157.
+international conference on Web search and data mining. ACM, 287–296. [48] Hongzhi Yin, Zhiting Hu, Xiaofang Zhou, Hao Wang, Kai Zheng, Quoc Viet Hung
+[24] Jianxin Ma, Chang Zhou, Hongxia Yang, Peng Cui, Xin Wang, and Wenwu Zhu. Nguyen, and Shazia Sadiq. 2016. Discovering interpretable geo-social commu-
+2020. Disentangled Self-Supervision in Sequential Recommenders. In Proceedings nities for user behavior prediction. In Data Engineering (ICDE), 2016 IEEE 32nd
+of the 26th ACM SIGKDD International Conference on Knowledge Discovery & Data International Conference on. IEEE, 942–953.
+Mining. 483–491. [49] Hongzhi Yin, Qinyong Wang, Kai Zheng, Zhixu Li, Jiali Yang, and Xiaofang
+[25] Miller Mcpherson, Lynn Smithlovin, and James M Cook. 2001. Birds of a feather: Zhou. 2019. Social influence-based group representation learning for group
+Homophily in social networks. Annual Review of Sociology 27, 1 (2001), 415–444. recommendation. In 2019 IEEE 35th International Conference on Data Engineering
+[26] Ron Milo, Shai Shen-Orr, Shalev Itzkovitz, Nadav Kashtan, Dmitri Chklovskii, (ICDE). IEEE, 566–577.
+and Uri Alon. 2002. Network motifs: simple building blocks of complex networks. [50] Hongzhi Yin, Qinyong Wang, Kai Zheng, Zhixu Li, and Xiaofang Zhou. 2020.
+Science 298, 5594 (2002), 824–827. Overcoming Data Sparsity in Group Recommendation. IEEE Transactions on
+[27] Aaron van den Oord, Yazhe Li, and Oriol Vinyals. 2018. Representation learning Knowledge and Data Engineering (2020).
+with contrastive predictive coding. arXiv preprint arXiv:1807.03748 (2018). [51] Hongzhi Yin, Xiaofang Zhou, Bin Cui, Hao Wang, Kai Zheng, and Quoc Viet Hung
+[28] Zhen Peng, Wenbing Huang, Minnan Luo, Qinghua Zheng, Yu Rong, Tingyang Nguyen. 2016. Adapting to User Interest Drift for POI Recommendation. IEEE
+Xu, and Junzhou Huang. 2020. Graph Representation Learning via Graphical Transactions on Knowledge and Data Engineering 28, 10 (2016), 2566–2581.
+Mutual Information Maximization. In Proceedings of The Web Conference 2020. [52] Hongzhi Yin, Lei Zou, Quoc Viet Hung Nguyen, Zi Huang, and Xiaofang Zhou.
+259–270. 2018. Joint event-partner recommendation in event-based social networks. In 2018
+[29] Jiezhong Qiu, Qibin Chen, Yuxiao Dong, Jing Zhang, Hongxia Yang, Ming Ding, IEEE 34th International Conference on Data Engineering (ICDE). IEEE, 929–940.
+Kuansan Wang, and Jie Tang. 2020. GCC: Graph Contrastive Coding for Graph [53] Yuning You, Tianlong Chen, Yongduo Sui, Ting Chen, Zhangyang Wang, and
+Neural Network Pre-Training. In Proceedings of the 26th ACM SIGKDD Interna- Yang Shen. 2020. Graph Contrastive Learning with Augmentations. Advances in
+tional Conference on Knowledge Discovery & Data Mining. 1150–1160. Neural Information Processing Systems 33 (2020).
+[30] Steffen Rendle, Christoph Freudenthaler, Zeno Gantner, and Lars Schmidt-Thieme. [54] Dingjun Yu, Hanli Wang, Peiqiu Chen, and Zhihua Wei. 2014. Mixed pooling
+2009. BPR: Bayesian personalized ranking from implicit feedback. In Proceedings for convolutional neural networks. In International conference on rough sets and
+of the twenty-fifth conference on uncertainty in artificial intelligence. AUAI Press, knowledge technology. Springer, 364–375.
+452–461. [55] Junliang Yu, Min Gao, Jundong Li, Hongzhi Yin, and Huan Liu. 2018. Adaptive
+[31] Aravind Sankar, Junting Wang, Adit Krishnan, and Hari Sundaram. 2020. Be- Implicit Friends Identification over Heterogeneous Network for Social Recom-
+yond Localized Graph Neural Networks: An Attributed Motif Regularization mendation. In Proceedings of the 27th ACM International Conference on Information
+Framework. arXiv preprint arXiv:2009.05197 (2020). and Knowledge Management. ACM, 357–366.
+[32] Aravind Sankar, Yanhong Wu, Yuhang Wu, Wei Zhang, Hao Yang, and Hari [56] Junliang Yu, Min Gao, Wenge Rong, Wentao Li, Qingyu Xiong, and Junhao Wen.
+Sundaram. 2020. GroupIM: A Mutual Information Maximization Framework for 2017. Hybrid attacks on model-based social recommender systems. Physica A:
+Neural Group Recommendation. arXiv preprint arXiv:2006.03736 (2020). Statistical Mechanics and its Applications 483 (2017), 171–181.
+[33] Badrul Munir Sarwar. 2001. Sparsity, scalability, and distribution in recommender [57] Junliang Yu, Min Gao, Hongzhi Yin, Jundong Li, Chongming Gao, and Qinyong
+systems. (2001). Wang. 2019. Generating reliable friends via adversarial training to improve social
+[34] Weiping Song, Zhiping Xiao, Yifan Wang, Laurent Charlin, Ming Zhang, and Jian recommendation. In 2019 IEEE International Conference on Data Mining (ICDM).
+Tang. 2019. Session-based social recommendation via dynamic graph attention IEEE, 768–777.
+networks. In Proceedings of the Twelfth ACM International Conference on Web [58] Junliang Yu, Hongzhi Yin, Jundong Li, Min Gao, Zi Huang, and Lizhen Cui.
+Search and Data Mining. 555–563. 2020. Enhance Social Recommendation with Adversarial Graph Convolutional
+[35] Ke Sun, Zhouchen Lin, and Zhanxing Zhu. 2019. Multi-Stage Self-Supervised Networks. arXiv preprint arXiv:2004.02340 (2020).
+Learning for Graph Convolutional Networks on Graphs with Few Labels. arXiv [59] Xiaohua Zhai, Avital Oliver, Alexander Kolesnikov, and Lucas Beyer. 2019. S4l:
+preprint arXiv:1902.11038 (2019). Self-supervised semi-supervised learning. In Proceedings of the IEEE international
+[36] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, conference on computer vision. 1476–1485.
+Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. 2017. Attention is all [60] Huan Zhao, Xiaogang Xu, Yangqiu Song, Dik Lun Lee, Zhao Chen, and Han Gao.
+you need. In Advances in neural information processing systems. 5998–6008. 2018. Ranking Users in Social Networks With Higher-Order Structures.. In AAAI.
+[37] Petar Velickovic, William Fedus, William L Hamilton, Pietro Liò, Yoshua Bengio, 232–240.
+and R Devon Hjelm. 2019. Deep Graph Infomax.. In ICLR (Poster). [61] Tong Zhao, Julian McAuley, and Irwin King. 2014. Leveraging social connections
+[38] Jianling Wang, Kaize Ding, Liangjie Hong, Huan Liu, and James Caverlee. 2020. to improve personalized ranking for collaborative filtering. In Proceedings of the
+Next-item Recommendation with Sequential Hypergraphs. In Proceedings of 23rd ACM International Conference on Conference on Information and Knowledge
+the 43rd International ACM SIGIR Conference on Research and Development in Management. ACM, 261–270.
+Information Retrieval. 1101–1110. [62] Xiaoyao Zheng, Yonglong Luo, Liping Sun, Xintao Ding, and Ji Zhang. 2018. A
+[39] Le Wu, Yong Ge, Qi Liu, Enhong Chen, Richang Hong, Junping Du, and Meng novel social network hybrid recommender system based on hypergraph topologic
+Wang. 2017. Modeling the evolution of users’ preferences and social links in structure. World Wide Web 21, 4 (2018), 985–1013.
+social networking services. IEEE Transactions on Knowledge and Data Engineering [63] Jie Zhou, Ganqu Cui, Zhengyan Zhang, Cheng Yang, Zhiyuan Liu, Lifeng Wang,
+29, 6 (2017), 1240–1253. Changcheng Li, and Maosong Sun. 2018. Graph neural networks: A review of
+[40] Le Wu, Junwei Li, Peijie Sun, Yong Ge, and Meng Wang. 2020. DiffNet++: A methods and applications. arXiv preprint arXiv:1812.08434 (2018).
+Neural Influence and Interest Diffusion Network for Social Recommendation. [64] Kun Zhou, Hui Wang, Wayne Xin Zhao, Yutao Zhu, Sirui Wang, Fuzheng Zhang,
+arXiv preprint arXiv:2002.00844 (2020). Zhongyuan Wang, and Ji-Rong Wen. 2020. Sˆ 3-Rec: Self-Supervised Learning
+[41] Le Wu, Peijie Sun, Yanjie Fu, Richang Hong, Xiting Wang, and Meng Wang. for Sequential Recommendation with Mutual Information Maximization. arXiv
+2019. A Neural Influence Diffusion Model for Social Recommendation. CoRR preprint arXiv:2008.07873 (2020).
+abs/1904.10322 (2019).
+[42] Qitian Wu, Hengrui Zhang, Xiaofeng Gao, Peng He, Paul Weng, Han Gao, and
+Guihai Chen. 2019. Dual graph attention networks for deep latent representation
+of multifaceted social effects in recommender systems. In The World Wide Web
+Conference. 2091–2102.
+[43] Zonghan Wu, Shirui Pan, Fengwen Chen, Guodong Long, Chengqi Zhang, and
+S Yu Philip. 2020. A comprehensive survey on graph neural networks. IEEE
+Transactions on Neural Networks and Learning Systems (2020).
+[44] Xin Xia, Hongzhi Yin, Junliang Yu, Qinyong Wang, Lizhen Cui, and Xiangliang
+Zhang. 2020. Self-Supervised Hypergraph Convolutional Networks for Session-
+based Recommendation. arXiv preprint arXiv:2012.06852 (2020).
+[45] Xin Xin, Alexandros Karatzoglou, Ioannis Arapakis, and Joemon M Jose. 2020. Self-
+Supervised Reinforcement Learning forRecommender Systems. arXiv preprint
+arXiv:2006.05779 (2020).
