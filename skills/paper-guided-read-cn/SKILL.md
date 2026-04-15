@@ -30,17 +30,11 @@ Create and maintain the optional `07_guided_reading_cn/` teaching track for the 
 
 ## Chapter Split Rules
 
-- Prefer learning-sized units over raw paper section boundaries.
-- Short sections can be merged, such as `Abstract + Introduction`.
-- Long sections must be split proactively, especially:
-  - formulation
-  - methodology
-  - model definition
-  - training objective
-  - experiment setup
-  - main results
-  - ablations and discussion
-- Each chapter should be thematically narrow, logically self-contained, and light enough for one reading session.
+- Default to the paper's original top-level and second-level section order.
+- Preserve source order. Do not pull equations, experiments, or discussion points forward into standalone chapters that appear before their source sections.
+- Short front-matter sections can still be merged when it helps readability, such as `Abstract + Introduction`, but the merge must remain contiguous in the paper.
+- Long sections may be split only when one sitting would be too heavy. When splitting, keep the resulting chapters consecutive and explicitly tied to the original source range, such as `Section 4.1`, then `Section 4.2`, then `Section 4.3`.
+- Each chapter should still be readable in one session, but fidelity to the paper's own progression takes priority over thematic re-organization.
 
 ## File Contract
 
@@ -62,7 +56,8 @@ Per-chapter file structure must preserve:
 
 ## Writing Rules
 
-- Keep the English source text segmented by meaning blocks; do not dump an entire long section unstructured.
+- Keep the English source text segmented by consecutive meaning blocks in original order; do not dump an entire long section unstructured.
+- The source-text portion should cover the main argumentative path of the active source range instead of over-compressing it into a few disconnected sentences.
 - Explain in Chinese, but retain important paper terminology in English.
 - Reuse the repository's existing extraction artifacts so the teaching track stays aligned with the core reading pipeline.
 - Treat uncertain claims as `uncertain`; do not overstate evidence.

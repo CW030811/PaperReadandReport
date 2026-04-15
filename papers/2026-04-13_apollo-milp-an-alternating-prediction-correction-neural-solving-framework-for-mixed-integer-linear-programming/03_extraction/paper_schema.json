@@ -1,0 +1,117 @@
+{
+  "paper_title": "Apollo-MILP: An Alternating Prediction-Correction Neural Solving Framework for Mixed-Integer Linear Programming",
+  "paper_folder": "papers/2026-04-13_apollo-milp-an-alternating-prediction-correction-neural-solving-framework-for-mixed-integer-linear-programming",
+  "scan_date": "2026-04-13",
+  "research_question": {
+    "summary": "Make ML-based MILP solution prediction reliable enough for aggressive problem reduction by alternating neural prediction with solver-based correction and fixing only trustworthy variable values.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction",
+      "Figure 1"
+    ],
+    "status": "done"
+  },
+  "high_level_algorithmic_idea": {
+    "summary": "Apollo-MILP alternates a GNN prediction step and a trust-region correction step, compares predicted and reference partial solutions, fixes only prediction-correction consistent variables, and repeats on progressively reduced MILPs.",
+    "evidence": [
+      "Abstract",
+      "Section 4.1",
+      "Section 4.2",
+      "Section 4.3",
+      "Figure 2",
+      "Algorithm 1"
+    ],
+    "status": "done"
+  },
+  "training_label_dataset": {
+    "summary": "Training targets are energy-weighted marginal probabilities derived from pools of optimal or near-optimal solutions for original and augmented reduced instances. Main experiments use CA, SC, IP, and WA with 240 training, 60 validation, and 100 test instances.",
+    "evidence": [
+      "Section 4.1",
+      "Eq. (3)",
+      "Eq. (4)",
+      "Section 5.1",
+      "Table 7",
+      "Appendix D"
+    ],
+    "status": "done"
+  },
+  "network_structure": {
+    "summary": "A bipartite MILP GNN predictor over constraint and variable nodes; the implementation uses four half-convolution layers and processes either the original or reduced MILP graph.",
+    "evidence": [
+      "Section 3.2",
+      "Section 4.1",
+      "Appendix D",
+      "Table 6"
+    ],
+    "status": "done"
+  },
+  "network_output": {
+    "summary": "Per-binary-variable marginal probabilities p_theta(x_i = 1 | I), later converted into a partial solution by fixing the highest-probability variables to 1 and the lowest-probability variables to 0.",
+    "evidence": [
+      "Section 3.3",
+      "Section 4.1",
+      "Algorithm 1"
+    ],
+    "status": "done"
+  },
+  "loss_function": {
+    "summary": "Cross-entropy between predicted binary marginals and energy-weighted target marginals from the solution pool. UEBO is used during correction as a reliability upper bound, not as the supervised training loss.",
+    "evidence": [
+      "Section 4.1",
+      "Eq. (3)",
+      "Eq. (4)",
+      "Section 4.2",
+      "Eq. (5)"
+    ],
+    "status": "done"
+  },
+  "inference_policy": {
+    "summary": "Run alternating rounds of prediction and correction: predict a partial solution, use trust-region search to obtain a reference solution, keep only prediction-correction consistent variables, fix them to reduce the MILP, and return the best solution from the final round.",
+    "evidence": [
+      "Section 4.2",
+      "Section 4.3",
+      "Eq. (7)",
+      "Algorithm 1",
+      "Section 5.1"
+    ],
+    "status": "done"
+  },
+  "novel_contribution": {
+    "summary": "The first alternating prediction-correction neural solving framework for MILP solution prediction, coupled with UEBO and a consistency-based fixing rule that comes with precision and feasibility guarantees and strong empirical gains over ND, PS, and ConPS.",
+    "evidence": [
+      "Abstract",
+      "Section 1 Introduction",
+      "Eq. (5)",
+      "Eq. (7)",
+      "Theorem 3",
+      "Corollary 4",
+      "Table 1",
+      "Table 2"
+    ],
+    "status": "done"
+  },
+  "global_evidence_pointers": [
+    "Abstract",
+    "Figure 1",
+    "Figure 2",
+    "Section 4.1",
+    "Eq. (3)",
+    "Eq. (4)",
+    "Section 4.2",
+    "Eq. (5)",
+    "Section 4.3",
+    "Eq. (7)",
+    "Theorem 3",
+    "Corollary 4",
+    "Algorithm 1",
+    "Section 5.1",
+    "Table 1",
+    "Table 2",
+    "Table 7",
+    "Appendix D"
+  ],
+  "unresolved_questions": [
+    "The main text focuses on a mixed-binary formulation and only briefly references how to generalize to broader MILPs.",
+    "The sensitivity of correction quality to solver strength and trust-region budget is not fully isolated in the core paper."
+  ]
+}
